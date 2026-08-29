@@ -1,20 +1,20 @@
-# 🌐 SIH26170 - REST API & Architecture Documentation
+# SIH26170 - REST API & Architecture Documentation
 ### Semiconductor Stress Screening, ML Inference & AI Explainability Engine
 **Project**: SIH26170 • Team SIT Pune (Smart India Hackathon 2026)
 
 ---
 
-## 📑 Table of Contents
+## Table of Contents
 1. [Overview & Architecture](#1-overview--architecture)
 2. [Base URL & Authentication](#2-base-url--authentication)
 3. [REST API Endpoints](#3-rest-api-endpoints)
-   - [GET /api/health](#get-apihealth)
-   - [GET /api/models](#get-apimodels)
-   - [GET /api/dataset-sample](#get-apidataset-sample)
-   - [POST /api/pipeline/run](#post-apipipelinerun)
-   - [POST /api/chat](#post-apichat)
-   - [GET /api/screenings](#get-apiscreenings)
-   - [GET /api/screenings/<id>](#get-apiscreeningsid)
+ - [GET /api/health](#get-apihealth)
+ - [GET /api/models](#get-apimodels)
+ - [GET /api/dataset-sample](#get-apidataset-sample)
+ - [POST /api/pipeline/run](#post-apipipelinerun)
+ - [POST /api/chat](#post-apichat)
+ - [GET /api/screenings](#get-apiscreenings)
+ - [GET /api/screenings/<id>](#get-apiscreeningsid)
 4. [Auto-Scaling & Normalization Engine](#4-auto-scaling--normalization-engine)
 5. [AI Explainability & LLM Integration (Groq Llama 3.3)](#5-ai-explainability--llm-integration-groq-llama-33)
 6. [Python Programmatic API Reference](#6-python-programmatic-api-reference)
@@ -26,38 +26,38 @@
 
 The SIH26170 Backend API serves as the orchestration layer between:
 - **Client Frontend Dashboard** (`frontend/`)
-- **Physics-Informed ML Models** (`models/`)
-- **Feature Auto-Scaler Engine** (`backend/scaler.py`)
+- **IGBT Time-Series Degradation & Breakdown Predictor** (`ts_fixed_timeseries.ipynb` / `models/`)
+- **MinMaxScaler Normalization Engine** (`backend/scaler.py`)
 - **Groq Llama 3.3 AI Explainability Service** (`models/chatbot.py`)
 - **SQLite Screening History Database** (`backend/data/screening.db`)
 
 ```
-                          CLIENT (Frontend / CLI / Notebooks)
-                                          │
-                                          ▼
-                      ┌────────────────────────────────────────┐
-                      │    HTTP REST Server (backend/app.py)   │
-                      │     Port 5000 • Python Standard Lib    │
-                      └───────────────────┬────────────────────┘
-                                          │
-                                          ▼
-                      ┌────────────────────────────────────────┐
-                      │ Master Screening Pipeline (pipeline.py)│
-                      └───────┬────────────────────────┬───────┘
-                              │                        │
-            ┌─────────────────┴────────┐   ┌───────────┴────────────────┐
-            ▼                          ▼   ▼                            ▼
-  ┌──────────────────┐   ┌──────────────────┐   ┌───────────────────────────┐
-  │ Feature Scaler   │   │ ML Model Engine  │   │ Groq AI Explainer         │
-  │ (scaler.py)      │   │ (model_engine.py)│   │ (models/chatbot.py)       │
-  │ Z-score standard │   │ Scaled Inference │   │ Llama 3.3 70B Versatile   │
-  └──────────────────┘   └──────────────────┘   └─────────────┬─────────────┘
-                                                              │
-                                                              ▼
-                                                ┌───────────────────────────┐
-                                                │ SQLite Database           │
-                                                │ (data/screening.db)       │
-                                                └───────────────────────────┘
+  CLIENT (Frontend / CLI / Notebooks)
+  │
+  ▼
+  ┌────────────────────────────────────────────────────────┐
+  │         HTTP REST Server (backend/app.py)              │
+  │           Port 5000 • Python Standard Lib              │
+  └───────────────────────────┬────────────────────────────┘
+                              │
+                              ▼
+  ┌────────────────────────────────────────────────────────┐
+  │        Master Screening Pipeline (pipeline.py)         │
+  └───────────┬───────────────────────────────┬────────────┘
+              │                               │
+  ┌───────────┴──────────────┐   ┌────────────┴───────────────┐
+  ▼                          ▼   ▼                            ▼
+┌──────────────────┐ ┌──────────────────┐ ┌───────────────────────────┐
+│  MinMax Scaler   │ │  Time-Series GBR │ │     Groq AI Explainer     │
+│   (scaler.py)    │ │(model_engine.py) │ │    (models/chatbot.py)    │
+│  [0, 1] Normal.  │ │ Degr. Forecast   │ │  Llama 3.3 70B Versatile  │
+└──────────────────┘ └──────────────────┘ └─────────────┬─────────────┘
+                                                        │
+                                                        ▼
+                                          ┌───────────────────────────┐
+                                          │      SQLite Database      │
+                                          │    (data/screening.db)    │
+                                          └───────────────────────────┘
 ```
 
 ---
@@ -84,13 +84,13 @@ curl -X GET http://localhost:5000/api/health
 **Example Response:**
 ```json
 {
-  "status": "healthy",
-  "service": "SIH26170 Semiconductor Screening API",
-  "version": "1.0.0",
-  "ai_provider": "groq",
-  "ai_model": "llama-3.3-70b-versatile",
-  "groq_key_detected": true,
-  "database": "backend/data/screening.db"
+ "status": "healthy",
+ "service": "SIH26170 Semiconductor Screening API",
+ "version": "1.0.0",
+ "ai_provider": "groq",
+ "ai_model": "llama-3.3-70b-versatile",
+ "groq_key_detected": true,
+ "database": "backend/data/screening.db"
 }
 ```
 
@@ -107,38 +107,38 @@ curl -X GET http://localhost:5000/api/models
 **Example Response:**
 ```json
 {
-  "models": {
-    "breakdown": {
-      "name": "Breakdown Model",
-      "input_param": "Collector-Emitter Voltage",
-      "input_unit": "V",
-      "output_param": "Leakage Current",
-      "output_unit": "A",
-      "typical_input_range": [0.0, 650.0],
-      "typical_output_range": [1e-9, 0.0001],
-      "description": "Models collector-emitter leakage current across applied collector-emitter voltage."
-    },
-    "leakage": {
-      "name": "Leakage IV Model",
-      "input_param": "Applied Voltage",
-      "input_unit": "V",
-      "output_param": "Leakage Current",
-      "output_unit": "A",
-      "typical_input_range": [0.0, 50.0],
-      "typical_output_range": [1e-9, 1e-05],
-      "description": "Models reverse leakage current as a function of applied bias voltage."
-    },
-    "turnon": {
-      "name": "Turn-On Model",
-      "input_param": "Gate Voltage",
-      "input_unit": "V",
-      "output_param": "Collector Current",
-      "output_unit": "A",
-      "typical_input_range": [0.0, 15.0],
-      "typical_output_range": [0.0, 30.0],
-      "description": "Models IGBT transfer characteristics (Gate Voltage vs Collector Current)."
-    }
-  }
+ "models": {
+ "breakdown": {
+ "name": "Breakdown Model",
+ "input_param": "Collector-Emitter Voltage",
+ "input_unit": "V",
+ "output_param": "Leakage Current",
+ "output_unit": "A",
+ "typical_input_range": [0.0, 650.0],
+ "typical_output_range": [1e-9, 0.0001],
+ "description": "Models collector-emitter leakage current across applied collector-emitter voltage."
+ },
+ "leakage": {
+ "name": "Leakage IV Model",
+ "input_param": "Applied Voltage",
+ "input_unit": "V",
+ "output_param": "Leakage Current",
+ "output_unit": "A",
+ "typical_input_range": [0.0, 50.0],
+ "typical_output_range": [1e-9, 1e-05],
+ "description": "Models reverse leakage current as a function of applied bias voltage."
+ },
+ "turnon": {
+ "name": "Turn-On Model",
+ "input_param": "Gate Voltage",
+ "input_unit": "V",
+ "output_param": "Collector Current",
+ "output_unit": "A",
+ "typical_input_range": [0.0, 15.0],
+ "typical_output_range": [0.0, 30.0],
+ "description": "Models IGBT transfer characteristics (Gate Voltage vs Collector Current)."
+ }
+ }
 }
 ```
 
@@ -159,15 +159,15 @@ curl -X GET "http://localhost:5000/api/dataset-sample?model=breakdown&limit=5"
 **Example Response:**
 ```json
 {
-  "model_type": "breakdown",
-  "count": 5,
-  "points": [
-    { "x": 2.020181, "y": 5.885971e-09 },
-    { "x": 10.052814, "y": 7.420194e-09 },
-    { "x": 50.192847, "y": 1.250194e-08 },
-    { "x": 300.49102, "y": 3.850194e-08 },
-    { "x": 550.18274, "y": 3.871029e-06 }
-  ]
+ "model_type": "breakdown",
+ "count": 5,
+ "points": [
+ { "x": 2.020181, "y": 5.885971e-09 },
+ { "x": 10.052814, "y": 7.420194e-09 },
+ { "x": 50.192847, "y": 1.250194e-08 },
+ { "x": 300.49102, "y": 3.850194e-08 },
+ { "x": 550.18274, "y": 3.871029e-06 }
+ ]
 }
 ```
 
@@ -188,48 +188,48 @@ curl -X GET "http://localhost:5000/api/dataset-sample?model=breakdown&limit=5"
 **Example Request:**
 ```bash
 curl -X POST http://localhost:5000/api/pipeline/run \
-  -H "Content-Type: application/json" \
-  -d '{
-    "model_type": "breakdown",
-    "raw_input": 550.0,
-    "user_said_output": 1.25e-5,
-    "component_id": "NASA-IGBT-Part-12",
-    "use_ai": true
-  }'
+ -H "Content-Type: application/json" \
+ -d '{
+ "model_type": "breakdown",
+ "raw_input": 550.0,
+ "user_said_output": 1.25e-5,
+ "component_id": "NASA-IGBT-Part-12",
+ "use_ai": true
+ }'
 ```
 
 **Example Response:**
 ```json
 {
-  "screening_id": 1,
-  "component_id": "NASA-IGBT-Part-12",
-  "model_type": "breakdown",
-  "model_name": "Breakdown Model",
-  "raw_input": 550.0,
-  "input_unit": "V",
-  "scaled_input": 546.447,
-  "scaled_output": 403.886,
-  "physical_output": 0.04341,
-  "output_unit": "A",
-  "user_said_output": 1.25e-5,
-  "discrepancy": {
-    "delta": -0.04339,
-    "pct_diff": -99.97,
-    "ratio": 0.00028,
-    "direction": "LOWER",
-    "risk_decision": "HOLD",
-    "severity": "MODERATE",
-    "physics_causes": [
-      "Model over-estimation at sub-breakdown voltage or superior die quality with lower defect density.",
-      "Incomplete contact formation during burn-in test probing."
-    ],
-    "recommendations": [
-      "Verify instrument sensitivity threshold (femto-ammeter vs standard SMU).",
-      "Re-screen at elevated junction temperature (125°C) to accelerate thermal carrier generation."
-    ]
-  },
-  "chatbot_explanation": "**Screening Verdict: 🟡 HOLD** (`NASA-IGBT-Part-12` • Breakdown Model)\n\n1. **Deviation**: `-99.97%` drift (0.00x baseline). Observed output is LOWER than model prediction.\n2. **Physics Cause**: Model over-estimation at sub-breakdown voltage or superior die quality.\n3. **Next Action**: Verify instrument sensitivity threshold and re-screen at 125°C.",
-  "timestamp": "2026-08-29T13:45:00.000000"
+ "screening_id": 1,
+ "component_id": "NASA-IGBT-Part-12",
+ "model_type": "breakdown",
+ "model_name": "Breakdown Model",
+ "raw_input": 550.0,
+ "input_unit": "V",
+ "scaled_input": 546.447,
+ "scaled_output": 403.886,
+ "physical_output": 0.04341,
+ "output_unit": "A",
+ "user_said_output": 1.25e-5,
+ "discrepancy": {
+ "delta": -0.04339,
+ "pct_diff": -99.97,
+ "ratio": 0.00028,
+ "direction": "LOWER",
+ "risk_decision": "HOLD",
+ "severity": "MODERATE",
+ "physics_causes": [
+ "Model over-estimation at sub-breakdown voltage or superior die quality with lower defect density.",
+ "Incomplete contact formation during burn-in test probing."
+ ],
+ "recommendations": [
+ "Verify instrument sensitivity threshold (femto-ammeter vs standard SMU).",
+ "Re-screen at elevated junction temperature (125°C) to accelerate thermal carrier generation."
+ ]
+ },
+ "chatbot_explanation": "**Screening Verdict: HOLD** (`NASA-IGBT-Part-12` • Breakdown Model)\n\n1. **Deviation**: `-99.97%` drift (0.00x baseline). Observed output is LOWER than model prediction.\n2. **Physics Cause**: Model over-estimation at sub-breakdown voltage or superior die quality.\n3. **Next Action**: Verify instrument sensitivity threshold and re-screen at 125°C.",
+ "timestamp": "2026-08-29T13:45:00.000000"
 }
 ```
 
@@ -241,24 +241,24 @@ Conversational endpoint for asking semiconductor physics, ML model dynamics, or 
 **Request Body:**
 ```json
 {
-  "message": "Why does leakage current increase exponentially near breakdown voltage?"
+ "message": "Why does leakage current increase exponentially near breakdown voltage?"
 }
 ```
 
 **Example Request:**
 ```bash
 curl -X POST http://localhost:5000/api/chat \
-  -H "Content-Type: application/json" \
-  -d '{"message": "Why does leakage current increase exponentially near breakdown voltage?"}'
+ -H "Content-Type: application/json" \
+ -d '{"message": "Why does leakage current increase exponentially near breakdown voltage?"}'
 ```
 
 **Example Response:**
 ```json
 {
-  "query": "Why does leakage current increase exponentially near breakdown voltage?",
-  "reply": "Near breakdown voltage ($V_{BR}$), the internal electric field in the space-charge region exceeds the critical field ($E > E_{crit}$). Carriers acquire sufficient kinetic energy to knock valence electrons into the conduction band via impact ionization, creating an exponential avalanche multiplication of electron-hole pairs.",
-  "provider": "groq",
-  "model": "llama-3.3-70b-versatile"
+ "query": "Why does leakage current increase exponentially near breakdown voltage?",
+ "reply": "Near breakdown voltage ($V_{BR}$), the internal electric field in the space-charge region exceeds the critical field ($E > E_{crit}$). Carriers acquire sufficient kinetic energy to knock valence electrons into the conduction band via impact ionization, creating an exponential avalanche multiplication of electron-hole pairs.",
+ "provider": "groq",
+ "model": "llama-3.3-70b-versatile"
 }
 ```
 
@@ -274,21 +274,21 @@ Retrieves past component screening transactions from the SQLite database.
 **Example Response:**
 ```json
 {
-  "total": 12,
-  "screenings": [
-    {
-      "id": 1,
-      "component_id": "NASA-IGBT-Part-12",
-      "model_type": "breakdown",
-      "raw_input": 550.0,
-      "scaled_input": 546.447,
-      "physical_output": 0.04341,
-      "user_said_output": 1.25e-5,
-      "pct_diff": -99.97,
-      "risk_decision": "HOLD",
-      "timestamp": "2026-08-29 13:45:00"
-    }
-  ]
+ "total": 12,
+ "screenings": [
+ {
+ "id": 1,
+ "component_id": "NASA-IGBT-Part-12",
+ "model_type": "breakdown",
+ "raw_input": 550.0,
+ "scaled_input": 546.447,
+ "physical_output": 0.04341,
+ "user_said_output": 1.25e-5,
+ "pct_diff": -99.97,
+ "risk_decision": "HOLD",
+ "timestamp": "2026-08-29 13:45:00"
+ }
+ ]
 }
 ```
 
@@ -320,7 +320,7 @@ The AI Diagnostic Chatbot uses **Groq's Llama 3.3 70B Versatile** model (`llama-
 Prompts are structured to enforce **concise, direct, 3-point outputs strictly under 100 words**:
 1. **Deviation Summary**: Quantitative drift percentage and ratio relative to baseline.
 2. **Physics Cause**: Primary semiconductor degradation mechanism (e.g. Avalanche multiplication, Shockley-Read-Hall recombination, oxide charge trapping $\Delta V_{th}$, or solder fatigue).
-3. **Screening Action**: Decision (🟢 PASS / 🟡 HOLD / 🔴 REJECT) and immediate next validation test step.
+3. **Screening Action**: Decision ( PASS / HOLD / REJECT) and immediate next validation test step.
 
 ---
 
@@ -335,10 +335,10 @@ pipeline = ScreeningPipeline()
 
 # Process component measurement
 result = pipeline.process_screening(
-    model_type="breakdown",
-    raw_input=550.0,
-    user_said_output=1.25e-5,
-    component_id="NASA-IGBT-Part-12"
+ model_type="breakdown",
+ raw_input=550.0,
+ user_said_output=1.25e-5,
+ component_id="NASA-IGBT-Part-12"
 )
 
 print("Verdict:", result["discrepancy"]["risk_decision"])
@@ -362,9 +362,9 @@ The API guarantees **100% uptime and resilience**:
 - **Zero External PIP Dependencies**: Standard library `urllib.request` and `http.server` ensure the server starts anywhere without `pip install` failures.
 - **Graceful AI Fallback**: If Groq API experiences rate limits, network timeouts, or missing keys, the system automatically falls back to its built-in rule-based physics engine with zero downtime and zero user-facing errors.
 - **Standard Error Schema**:
-  ```json
-  {
-    "error": "Descriptive error message",
-    "status": 400
-  }
-  ```
+ ```json
+ {
+ "error": "Descriptive error message",
+ "status": 400
+ }
+ ```

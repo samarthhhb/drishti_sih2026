@@ -634,7 +634,7 @@ HTML_PAGE = """<!DOCTYPE html>
 
     <header>
         <div class="logo-group">
-            <div class="logo-icon">⚡</div>
+            <div class="logo-icon"></div>
             <div class="logo-text">
                 <h1>SIH26170 Model Explainer & Discrepancy AI</h1>
                 <p>NASA IGBT Aging & Semiconductor Stress Screening Assistant</p>
@@ -644,7 +644,7 @@ HTML_PAGE = """<!DOCTYPE html>
             <div class="api-badge" id="apiBadgeBtn" onclick="openModal()">
                 <span class="api-dot" id="apiDot"></span>
                 <span id="apiStatusText">Engine: Gemini / Offline</span>
-                <span>⚙️</span>
+                <span></span>
             </div>
         </div>
     </header>
@@ -653,7 +653,7 @@ HTML_PAGE = """<!DOCTYPE html>
         <!-- LEFT PANEL: Model Discrepancy Analyzer & Presets -->
         <section class="panel">
             <div class="panel-header">
-                <h2><span>🔍</span> Discrepancy & Physics Analyzer</h2>
+                <h2><span></span> Discrepancy & Physics Analyzer</h2>
             </div>
             <div class="panel-body">
                 <form id="discrepancyForm" onsubmit="event.preventDefault(); runAnalysis();">
@@ -688,7 +688,7 @@ HTML_PAGE = """<!DOCTYPE html>
                     </div>
 
                     <button type="submit" class="btn" id="analyzeBtn">
-                        <span>⚡</span> Explain Discrepancy & Physics
+                        <span></span> Explain Discrepancy & Physics
                     </button>
                 </form>
 
@@ -719,19 +719,19 @@ HTML_PAGE = """<!DOCTYPE html>
                     <div class="presets-title">NASA IGBT Aging Test Cases</div>
                     <div class="presets-list">
                         <div class="preset-chip" onclick="loadPreset('breakdown', 550.0, 3.87e-6, 1.25e-5, 'NASA-Part-12 (Aged 500h)')">
-                            <span>⚡ [Breakdown] Premature Knee (550V)</span>
+                            <span> [Breakdown] Premature Knee (550V)</span>
                             <span style="color:var(--status-reject); font-weight:700;">REJECT</span>
                         </div>
                         <div class="preset-chip" onclick="loadPreset('leakage', 25.0, 1.05e-5, 4.50e-5, 'NASA-Part-18 (Thermal Stress)')">
-                            <span>🔍 [Leakage] High SRH Leakage (25V)</span>
+                            <span> [Leakage] High SRH Leakage (25V)</span>
                             <span style="color:var(--status-hold); font-weight:700;">HOLD</span>
                         </div>
                         <div class="preset-chip" onclick="loadPreset('turnon', 5.0, 1.85, 0.42, 'NASA-Part-14 (Oxide Trap)')">
-                            <span>🔄 [Turn-On] +ΔVth Shift (Vge=5V)</span>
+                            <span> [Turn-On] +ΔVth Shift (Vge=5V)</span>
                             <span style="color:var(--status-reject); font-weight:700;">REJECT</span>
                         </div>
                         <div class="preset-chip" onclick="loadPreset('leakage', 10.0, 3.85e-9, 4.02e-9, 'NASA-Part-11 (Pristine)')">
-                            <span>🟢 [Baseline] Healthy Population (10V)</span>
+                            <span> [Baseline] Healthy Population (10V)</span>
                             <span style="color:var(--status-pass); font-weight:700;">PASS</span>
                         </div>
                     </div>
@@ -742,7 +742,7 @@ HTML_PAGE = """<!DOCTYPE html>
         <!-- RIGHT PANEL: Conversational AI Chat & Diagnostic Report View -->
         <section class="panel">
             <div class="panel-header">
-                <h2><span>🤖</span> Semiconductor Model Dynamics & Output Explainer</h2>
+                <h2><span></span> Semiconductor Model Dynamics & Output Explainer</h2>
                 <button class="btn-secondary" onclick="clearChat()">Clear Chat</button>
             </div>
             <div class="chat-container">
@@ -750,7 +750,7 @@ HTML_PAGE = """<!DOCTYPE html>
                     <div class="chat-msg msg-assistant">
                         <div class="msg-avatar avatar-assistant">AI</div>
                         <div class="msg-bubble">
-                            <h3>👋 Welcome to SemiconExplainer AI</h3>
+                            <h3> Welcome to Drishti AI</h3>
                             <p>I am your dedicated AI diagnostic assistant for <strong>Project SIH26170</strong> (Semiconductor Environmental Stress Screening).</p>
                             <p>You can:</p>
                             <ul>
@@ -773,7 +773,7 @@ HTML_PAGE = """<!DOCTYPE html>
     <div class="modal-overlay" id="apiModal">
         <div class="modal-box">
             <div class="modal-title">
-                <span>⚙️ Configure Free AI API Provider</span>
+                <span> Configure Free AI API Provider</span>
                 <button class="modal-close" onclick="closeModal()">&times;</button>
             </div>
             <p style="font-size:0.85rem; color:var(--text-secondary); margin-bottom:1rem;">
@@ -846,7 +846,7 @@ HTML_PAGE = """<!DOCTYPE html>
             const yu = parseFloat(document.getElementById('yUser').value);
 
             const btn = document.getElementById('analyzeBtn');
-            btn.innerHTML = "<span>⏳</span> Analyzing Physics...";
+            btn.innerHTML = "<span></span> Analyzing Physics...";
             btn.disabled = true;
 
             try {
@@ -881,7 +881,7 @@ HTML_PAGE = """<!DOCTYPE html>
             } catch (err) {
                 alert('Analysis error: ' + err.message);
             } finally {
-                btn.innerHTML = "<span>⚡</span> Explain Discrepancy & Physics";
+                btn.innerHTML = "<span></span> Explain Discrepancy & Physics";
                 btn.disabled = false;
             }
         }
@@ -903,7 +903,7 @@ HTML_PAGE = """<!DOCTYPE html>
                 const data = await response.json();
                 appendAssistantMessage(data.reply);
             } catch (err) {
-                appendAssistantMessage('❌ Error generating reply: ' + err.message);
+                appendAssistantMessage(' Error generating reply: ' + err.message);
             }
         }
 
@@ -1114,15 +1114,15 @@ def main():
     server_address = (args.host, args.port)
     httpd = HTTPServer(server_address, WebAppHandler)
     print("=" * 70)
-    print(f"🚀 SIH26170 Semiconductor Model Explainer & Chatbot Web App")
-    print(f"🌐 Server running at http://{args.host}:{args.port}/")
-    print(f"⚡ Active AI Engine: {chatbot_instance.api_client.provider.upper()}")
+    print(f" SIH26170 Semiconductor Model Explainer & Chatbot Web App")
+    print(f" Server running at http://{args.host}:{args.port}/")
+    print(f" Active AI Engine: {chatbot_instance.api_client.provider.upper()}")
     print("=" * 70)
 
     try:
         httpd.serve_forever()
     except KeyboardInterrupt:
-        print("\n👋 Server stopped.")
+        print("\n Server stopped.")
         httpd.server_close()
 
 

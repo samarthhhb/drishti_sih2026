@@ -31,8 +31,12 @@ ROOT_DIR = Path(__file__).resolve().parent.parent
 if str(ROOT_DIR) not in sys.path:
     sys.path.insert(0, str(ROOT_DIR))
 
-from backend.pipeline import ScreeningPipeline
-from backend.scaler import MODEL_SCALERS
+try:
+    from backend.pipeline import ScreeningPipeline
+    from backend.scaler import MINMAX_BOUNDS, MinMaxScaler
+except (ImportError, ModuleNotFoundError):
+    from pipeline import ScreeningPipeline
+    from scaler import MINMAX_BOUNDS, MinMaxScaler
 
 # Global master pipeline instance
 pipeline_instance = ScreeningPipeline()
@@ -68,9 +72,12 @@ def sample_dataset(model_type: str, max_points: int = 150):
             step = max(1, len(all_rows) // max_points)
             for row in all_rows[::step][:max_points]:
                 try:
+                    y_raw = float(row[y_col])
+                    # If in Amperes (< 0.1), scale to microAmpere (uA)
+                    y_micro = y_raw * 1e6 if y_raw < 0.1 else y_raw
                     points.append({
                         "x": float(row[x_col]),
-                        "y": float(row[y_col])
+                        "y": y_micro
                     })
                 except (ValueError, KeyError):
                     continue
@@ -134,7 +141,7 @@ class BackendAPIHandler(BaseHTTPRequestHandler):
 
         elif path == "/api/models":
             self._set_headers(200)
-            self.wfile.write(json.dumps(MODEL_SCALERS).encode("utf-8"))
+            self.wfile.write(json.dumps(MINMAX_BOUNDS).encode("utf-8"))
 
         elif path == "/api/dataset-sample":
             model_type = query.get("model", ["breakdown"])[0]
@@ -148,7 +155,7 @@ class BackendAPIHandler(BaseHTTPRequestHandler):
             self._set_headers(200)
             self.wfile.write(json.dumps(stats).encode("utf-8"))
 
-        elif path == "/api/history":
+        elif path in ("/api/history", "/api/screenings"):
             limit = int(query.get("limit", [50])[0])
             offset = int(query.get("offset", [0])[0])
             model_type = query.get("model_type", [None])[0]
@@ -161,11 +168,11 @@ class BackendAPIHandler(BaseHTTPRequestHandler):
                 risk_decision=risk_decision
             )
             self._set_headers(200)
-            self.wfile.write(json.dumps({"total": len(records), "records": records}).encode("utf-8"))
+            self.wfile.write(json.dumps({"total": len(records), "records": records, "screenings": records}).encode("utf-8"))
 
-        elif path.startswith("/api/history/"):
+        elif path.startswith("/api/history/") or path.startswith("/api/screenings/"):
             try:
-                rec_id = int(path.split("/api/history/")[-1])
+                rec_id = int(path.split("/")[-1])
                 rec = pipeline_instance.database.get_screening_by_id(rec_id)
                 if rec:
                     self._set_headers(200)
@@ -280,16 +287,16 @@ def main():
     server_address = (args.host, args.port)
     httpd = HTTPServer(server_address, BackendAPIHandler)
     print("=" * 75)
-    print(f"🚀 SIH26170 Semiconductor Screening Web Application")
-    print(f"🌐 Frontend & API active at http://{args.host}:{args.port}/")
-    print(f"💾 SQLite Database: {pipeline_instance.database.db_path}")
-    print(f"⚡ AI Explainer Engine: {pipeline_instance.chatbot.api_client.provider.upper()}")
+    print(f" SIH26170 Semiconductor Screening Web Application")
+    print(f" Frontend & API active at http://{args.host}:{args.port}/")
+    print(f" SQLite Database: {pipeline_instance.database.db_path}")
+    print(f" AI Explainer Engine: {pipeline_instance.chatbot.api_client.provider.upper()}")
     print("=" * 75)
 
     try:
         httpd.serve_forever()
     except KeyboardInterrupt:
-        print("\n👋 Stopping server...")
+        print("\n Stopping server...")
         httpd.server_close()
 
 

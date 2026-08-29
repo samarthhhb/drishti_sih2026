@@ -3,7 +3,7 @@
 SIH26170 - Specification Sheet DOCX Generator
 =============================================================================
 Generates a complete, beautifully structured Microsoft Word (.docx) specification
-sheet for Project SIH26170 - Team Dhrishti (Insightful Vision).
+sheet for Project SIH26170 - Team Drishti (Insightful Vision).
 """
 
 import zipfile
@@ -11,7 +11,7 @@ import html
 from pathlib import Path
 
 def generate_docx():
-    target_file = Path("/Users/samarth/Documents/SIH 26/Dhrishti_System_Specification_Sheet.docx")
+    target_file = Path("/Users/samarth/Documents/SIH 26/Drishti_System_Specification_Sheet.docx")
     
     # 1. Content Types XML
     content_types = """<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
@@ -186,9 +186,9 @@ def generate_docx():
     
     # Document Header / Cover Style
     doc_body.append(make_p("ENGINEERING SPECIFICATION SHEET", bold=True, color="EA580C", size=24, space_before=100, space_after=60))
-    doc_body.append(make_p("Dhrishti — AI-Driven Semiconductor Burn-In & Anomaly Screening System", bold=True, color="1E40AF", size=36, space_before=40, space_after=100))
+    doc_body.append(make_p("Drishti — AI-Driven Semiconductor Burn-In & Anomaly Screening System", bold=True, color="1E40AF", size=36, space_before=40, space_after=100))
     doc_body.append(make_p("Smart India Hackathon (SIH 2026) • Problem Statement ID: SIH26170", bold=True, color="046A38", size=22, space_before=0, space_after=80))
-    doc_body.append(make_p("Organization: Symbiosis Institute of Technology (SIT), Pune | Team: Dhrishti (Insightful Vision)", italic=True, color="64748B", size=20, space_before=0, space_after=240))
+    doc_body.append(make_p("Organization: Symbiosis Institute of Technology (SIT), Pune | Team: Drishti (Insightful Vision)", italic=True, color="64748B", size=20, space_before=0, space_after=240))
     
     doc_body.append(make_callout(
         "MISSION OBJECTIVE",
@@ -205,7 +205,7 @@ def generate_docx():
         "Consider a semiconductor lot with a mean leakage current of 10 μA and a static datasheet upper limit of 50 μA. A component exhibiting 45 μA technically passes traditional screening, yet represents a 4.5x population deviation indicating localized barrier degradation or dielectric micro-cracking."
     ))
     doc_body.append(make_bullet(
-        "Dhrishti Core Purpose",
+        "Drishti Core Purpose",
         "Provides dynamic population-relative outlier detection, time-series drift forecasting, feature auto-scaling, and natural language physics explainability powered by Groq Llama 3.3."
     ))
 
@@ -235,7 +235,7 @@ def generate_docx():
     doc_body.append(make_p("3.1 Core User Interface Views", style="Heading2"))
     doc_body.append(make_bullet(
         "Landing Page (4 Executive Cards)",
-        "Features 4 dedicated cards: 1) About Us (Team Dhrishti & SIH26170 specifications), 2) Breakdown Model (Vce vs Ic), 3) Leakage IV Model (Applied Voltage vs Leakage), and 4) Turn-On Model (Vge vs Ic)."
+        "Features 4 dedicated cards: 1) About Us (Team Drishti & SIH26170 specifications), 2) Breakdown Model (Vce vs Ic), 3) Leakage IV Model (Applied Voltage vs Leakage), and 4) Turn-On Model (Vge vs Ic)."
     ))
     doc_body.append(make_bullet(
         "Split-Screen Diagnostic Workspace",
@@ -251,19 +251,19 @@ def generate_docx():
         "The graphs are fully interactive and adaptable to personal engineering needs:"
     ))
     doc_body.append(make_bullet(
-        "🎯 Direct Canvas Dragging",
+        " Direct Canvas Dragging",
         "Clicking or dragging anywhere across the Scatterplot or Line Chart immediately repositions the live test point to that exact (X, Y) coordinate, simultaneously updating the form inputs and triggering real-time re-screening."
     ))
     doc_body.append(make_bullet(
-        "🖐️ Pan View Mode",
+        " Pan View Mode",
         "Activating Pan Mode allows engineers to click and drag the canvas axes in 2D space to explore specific sub-breakdown knees, saturation regions, or high-voltage leakage tails."
     ))
     doc_body.append(make_bullet(
-        "🔍 Zoom In / Out & Mouse Wheel",
+        " Zoom In / Out & Mouse Wheel",
         "Engineers can zoom with toolbar buttons or use the mouse scroll wheel centered at the cursor. A 'Reset View' button instantly restores default axis boundaries."
     ))
     doc_body.append(make_bullet(
-        "🎛️ Real-Time Sliders",
+        " Real-Time Sliders",
         "Smooth input voltage and current sliders allow dynamic parameter sweeping with debounced ML model evaluation."
     ))
 
@@ -283,13 +283,22 @@ def generate_docx():
     ))
     
     doc_body.append(make_p("4.2 NASA Dataset Calibration Statistics", style="Heading2"))
-    cal_headers = ["Model Name", "Input Feature", "Mean X (μ_x)", "Std X (σ_x)", "Target Feature", "Mean Y (μ_y)", "Std Y (σ_y)"]
+    cal_headers = ["Model Name", "Input Feature", "Min X", "Max X", "Target Feature", "Min Y (microAmpere)", "Max Y (microAmpere)"]
     cal_rows = [
-        ["Breakdown", "Collector-Emitter Voltage", "3.883881 V", "0.999395 V", "Leakage Current", "7.1072e-5 A", "1.0731e-4 A"],
-        ["Leakage IV", "Applied Voltage", "301.3095 V", "173.3395 V", "Leakage Current", "1.8449e-6 A", "1.3856e-6 A"],
-        ["Turn-On", "Gate Voltage", "3.883881 V", "0.999395 V", "Collector Current", "7.1072e-5 A", "1.0731e-4 A"]
+        ["Breakdown", "Collector-Emitter Voltage (V)", "0.0 V", "650.0 V", "Leakage Current", "0.0 microAmpere", "150.0 microAmpere"],
+        ["Leakage IV", "Applied Voltage (V)", "0.0 V", "600.0 V", "Leakage Current", "0.0 microAmpere", "10.0 microAmpere"],
+        ["Turn-On", "Gate Voltage (V)", "0.0 V", "15.0 V", "Collector Current", "0.0 microAmpere", "250.0 microAmpere"]
     ]
     doc_body.append(make_table(cal_headers, cal_rows, [1200, 1500, 1100, 1100, 1400, 1300, 1400]))
+
+    doc_body.append(make_p("4.3 IGBT Time-Series Degradation & Breakdown Prediction Pipeline", style="Heading2"))
+    doc_body.append(make_p(
+        "For mission-critical space converters, the system implements an end-to-end time-series degradation pipeline operating on chronological sensor streams (Breakdown_timeseries_microampere.csv • 3,790 observations • 30-minute intervals):\n"
+        "1. Leakage-Safe Feature Engineering: Lags [1, 2, 3, 6, 12], Shifted Rolling Statistics [3, 6, 12, 24] with mean and std (shifted by 1 observation before window calculation to strictly prevent lookahead leakage).\n"
+        "2. Chronological Split: 80% past historical training / 20% future unseen testing (shuffle=False).\n"
+        "3. Gradient Boosting Regression: GradientBoostingRegressor(n_estimators=300, learning_rate=0.03, max_depth=3) evaluated via 5-Fold TimeSeriesSplit.\n"
+        "4. Predictive Maintenance Anomaly Signals: Tracks prediction residual e_t = Actual - Predicted in microAmperes with dynamic confidence bounds (+/-2σ, +/-4σ) to flag early degradation warnings before catastrophic avalanche breakdown."
+    ))
 
     # SECTION 5: REST API SPECIFICATION
     doc_body.append(make_p("5. REST API Specifications & Integration Protocols", style="Heading1"))
@@ -324,7 +333,7 @@ def generate_docx():
     ))
     doc_body.append(make_bullet(
         "3. SIH-26 Actionable Verdict",
-        "Assigns 🟢 PASS (normal baseline, |Δ%| <= 10%), 🟡 HOLD (moderate drift, requires 125°C curve tracing), or 🔴 REJECT (high latent defect risk, immediate flight payload quarantine)."
+        "Assigns  PASS (normal baseline, |Δ%| <= 10%),  HOLD (moderate drift, requires 125°C curve tracing), or  REJECT (high latent defect risk, immediate flight payload quarantine)."
     ))
 
     # SECTION 7: QUALITY ASSURANCE & EVALUATION METRICS
@@ -343,9 +352,9 @@ def generate_docx():
     ))
 
     # SECTION 8: TEAM DHRISHTI ROSTER
-    doc_body.append(make_p("8. Team Dhrishti Roster & Institutional Stamp", style="Heading1"))
+    doc_body.append(make_p("8. Team Drishti Roster & Institutional Stamp", style="Heading1"))
     doc_body.append(make_p(
-        "Project developed for Smart India Hackathon (SIH 2026) by Team Dhrishti at Symbiosis Institute of Technology (SIT), Pune:"
+        "Project developed for Smart India Hackathon (SIH 2026) by Team Drishti at Symbiosis Institute of Technology (SIT), Pune:"
     ))
     
     team_headers = ["#", "Member Name", "PRN / Student ID", "Engineering Role / Specialization"]
@@ -361,7 +370,7 @@ def generate_docx():
 
     # Footer note
     doc_body.append(make_p(
-        "Document compiled and verified for SIH26170. All rights reserved by Team Dhrishti (SIT Pune).",
+        "Document compiled and verified for SIH26170. All rights reserved by Team Drishti (SIT Pune).",
         italic=True, color="64748B", size=18, space_before=180, space_after=60, align="center"
     ))
 

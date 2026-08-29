@@ -1,4 +1,4 @@
-# 🔬 SIH26170 - Semiconductor Models & AI Explainability System
+# SIH26170 - Semiconductor Models & AI Explainability System
 
 Welcome to the **Models Section** of **SIH26170: AI-Driven Anomaly Detection in Component Burn-In & Screening** (Predictive Environmental Stress Screening for Semiconductor Components like IGBT IRG4BC30K and MOSFET IRF520Npbf).
 
@@ -6,22 +6,23 @@ This directory contains the machine learning regression models, physical charact
 
 ---
 
-## 📑 Table of Contents
+## Table of Contents
 1. [Overview of Machine Learning Models](#1-overview-of-machine-learning-models)
-   - [Breakdown Model (`breakdown.ipynb`)](#breakdown-model)
-   - [Leakage IV Model (`leakage.ipynb`)](#leakage-iv-model)
-   - [Turn-On Model (`turnOn.ipynb`)](#turn-on-model)
+ - [Breakdown Model (`breakdown.ipynb`)](#breakdown-model)
+ - [Leakage IV Model (`leakage.ipynb`)](#leakage-iv-model)
+ - [Turn-On Model (`turnOn.ipynb`)](#turn-on-model)
+
 2. [Semiconductor Physics & Degradation Dynamics](#2-semiconductor-physics--degradation-dynamics)
 3. [API-Based Free Chatbot & Discrepancy Analyzer](#3-api-based-free-chatbot--discrepancy-analyzer)
-   - [Purpose & Core Task](#purpose--core-task)
-   - [Supported Free API Providers](#supported-free-api-providers)
-   - [Discrepancy Formulation & Metrics](#discrepancy-formulation--metrics)
-   - [Automated SIH-26 Risk Assessment](#automated-sih-26-risk-assessment)
+ - [Purpose & Core Task](#purpose--core-task)
+ - [Supported Free API Providers](#supported-free-api-providers)
+ - [Discrepancy Formulation & Metrics](#discrepancy-formulation--metrics)
+ - [Automated SIH-26 Risk Assessment](#automated-sih-26-risk-assessment)
 4. [How to Run & Use the Chatbot](#4-how-to-run--use-the-chatbot)
-   - [1. Interactive CLI Mode](#1-interactive-cli-mode)
-   - [2. Modern Web Dashboard UI](#2-modern-web-dashboard-ui)
-   - [3. Jupyter Notebook Integration](#3-jupyter-notebook-integration)
-   - [4. Demo Notebook](#4-demo-notebook)
+ - [1. Interactive CLI Mode](#1-interactive-cli-mode)
+ - [2. Modern Web Dashboard UI](#2-modern-web-dashboard-ui)
+ - [3. Jupyter Notebook Integration](#3-jupyter-notebook-integration)
+ - [4. Demo Notebook](#4-demo-notebook)
 5. [File Structure](#5-file-structure)
 
 ---
@@ -32,9 +33,17 @@ The regression models are trained on electrical characterization and accelerated
 
 | Model | Notebook | Dataset | Input Feature ($X$) | Target Output ($Y$) | Nominal Range |
 | :--- | :--- | :--- | :--- | :--- | :--- |
+| **Time-Series Degradation** | [`ts_fixed_timeseries.ipynb`](file:///Users/samarth/Documents/SIH%2026/models/ts_fixed_timeseries.ipynb) | `Breakdown_timeseries_microampere(1).csv` | Lags $[1..12]$, Rolling Mean/Std $[3..24]$ | Future Leakage Current ($I_c$) [$\mu\text{A}$] | $0 - 650\text{ V} \rightarrow 0 - 250\ \mu\text{A}$ |
 | **Breakdown** | [`breakdown.ipynb`](file:///Users/samarth/Documents/SIH%2026/models/breakdown.ipynb) | `Breakdown.csv` | Collector-Emitter Voltage ($V_{ce}$) [V] | Leakage Current ($I_c$) [A] | $0 - 650\text{ V} \rightarrow 1\text{ nA} - 100\ \mu\text{A}$ |
 | **Leakage IV** | [`leakage.ipynb`](file:///Users/samarth/Documents/SIH%2026/models/leakage.ipynb) | `LeakageIV.csv` | Applied Bias Voltage ($V$) [V] | Leakage Current ($I_{\text{leak}}$) [A] | $0 - 50\text{ V} \rightarrow 1\text{ nA} - 50\ \mu\text{A}$ |
 | **Turn-On** | [`turnOn.ipynb`](file:///Users/samarth/Documents/SIH%2026/models/turnOn.ipynb) | `TurnOn.csv` | Gate-Emitter Voltage ($V_{ge}$) [V] | Collector Current ($I_c$) [A] | $0 - 15\text{ V} \rightarrow 0 - 30\text{ A}$ |
+
+---
+
+### Time-Series Degradation & Breakdown Prediction Model
+- **Goal**: Predicts future IGBT leakage current from chronological electrical measurements using Gradient Boosting regression (`GradientBoostingRegressor(n_estimators=300, learning_rate=0.03, max_depth=3)`).
+- **Physical Significance & Predictive Maintenance**: Monitored via prediction residuals ($e_t = y_{\text{actual}, t} - \hat{y}_{\text{pred}, t}$) to flag early degradation warnings, persistent residual drift, and avalanche breakdown onsets before catastrophic failure.
+- **Leakage Prevention**: Rolling statistics are shifted by 1 observation before window calculation; split is strictly chronological (80% past train / 20% future test).
 
 ---
 
@@ -81,29 +90,29 @@ When screening physical semiconductor devices during Environmental Stress Screen
 
 ```mermaid
 flowchart LR
-    subgraph Inputs ["Inputs"]
-        X["Test Bias (X)"]
-        Ym["Model Output (Y_model)"]
-        Yu["Observed Output (Y_user)"]
-    end
+ subgraph Inputs ["Inputs"]
+ X["Test Bias (X)"]
+ Ym["Model Output (Y_model)"]
+ Yu["Observed Output (Y_user)"]
+ end
 
-    subgraph Engine ["Chatbot Discrepancy Engine"]
-        Diff["Quantitative Analysis\n(Δ, % error, ratio)"]
-        Phys["Physics of Failure Mapping\n(Avalanche, SRH, ΔVth)"]
-        Risk["SIH-26 Decision\n(PASS / HOLD / REJECT)"]
-    end
+ subgraph Engine ["Chatbot Discrepancy Engine"]
+ Diff["Quantitative Analysis\n(Δ, % error, ratio)"]
+ Phys["Physics of Failure Mapping\n(Avalanche, SRH, ΔVth)"]
+ Risk["SIH-26 Decision\n(PASS / HOLD / REJECT)"]
+ end
 
-    subgraph LLM ["AI Generation Layer"]
-        FreeAPI["Free AI API (Gemini / Groq / OpenRouter)\nor Offline Physics Expert Engine"]
-    end
+ subgraph LLM ["AI Generation Layer"]
+ FreeAPI["Free AI API (Gemini / Groq / OpenRouter)\nor Offline Physics Expert Engine"]
+ end
 
-    X --> Diff
-    Ym --> Diff
-    Yu --> Diff
-    Diff --> Phys
-    Phys --> Risk
-    Risk --> FreeAPI
-    FreeAPI --> Report["Diagnostic Report & Screening Recommendation"]
+ X --> Diff
+ Ym --> Diff
+ Yu --> Diff
+ Diff --> Phys
+ Phys --> Risk
+ Risk --> FreeAPI
+ FreeAPI --> Report["Diagnostic Report & Screening Recommendation"]
 ```
 
 ---
@@ -129,9 +138,9 @@ For any test condition $X$:
 2. **Relative Percentage Deviation**: $\%\Delta = \frac{Y_{\text{user}} - Y_{\text{model}}}{Y_{\text{model}}} \times 100\%$
 3. **Magnitude Ratio**: $\text{Ratio} = \frac{Y_{\text{user}}}{Y_{\text{model}}}$
 4. **Trajectory Direction**:
-   - `USER_HIGHER_THAN_MODEL` ($\Delta > 0$): Indicates accelerated leakage, premature breakdown, or parasitic conduction.
-   - `USER_LOWER_THAN_MODEL` ($\Delta < 0$): Indicates positive threshold shift ($\Delta V_{th} > 0$), transconductance collapse, or series contact resistance.
-   - `NOMINAL_ALIGNMENT` ($|\%\Delta| \le 10\%$): Normal statistical manufacturing tolerance.
+ - `USER_HIGHER_THAN_MODEL` ($\Delta > 0$): Indicates accelerated leakage, premature breakdown, or parasitic conduction.
+ - `USER_LOWER_THAN_MODEL` ($\Delta < 0$): Indicates positive threshold shift ($\Delta V_{th} > 0$), transconductance collapse, or series contact resistance.
+ - `NOMINAL_ALIGNMENT` ($|\%\Delta| \le 10\%$): Normal statistical manufacturing tolerance.
 
 ---
 
@@ -139,9 +148,9 @@ For any test condition $X$:
 
 | Decision | Badge | Condition | Screening Action |
 | :--- | :---: | :--- | :--- |
-| **PASS** | 🟢 | $|\%\Delta| \le 10\%$ or low-risk variance | Component approved for operational flight assembly. |
-| **HOLD** | 🟡 | $10\% < |\%\Delta| \le 50\%$ or pre-breakdown drift | Component quarantined; route to secondary burn-in test & $125^\circ\text{C}$ curve trace. |
-| **REJECT** | 🔴 | $|\%\Delta| > 50\%$, $Y_{\text{user}} > \text{Limit}$, or premature breakdown | Component rejected; latent failure risk detected; route to Destructive Physical Analysis (DPA). |
+| **PASS** | | $|\%\Delta| \le 10\%$ or low-risk variance | Component approved for operational flight assembly. |
+| **HOLD** | | $10\% < |\%\Delta| \le 50\%$ or pre-breakdown drift | Component quarantined; route to secondary burn-in test & $125^\circ\text{C}$ curve trace. |
+| **REJECT** | | $|\%\Delta| > 50\%$, $Y_{\text{user}} > \text{Limit}$, or premature breakdown | Component rejected; latent failure risk detected; route to Destructive Physical Analysis (DPA). |
 
 ---
 
@@ -172,7 +181,7 @@ Open your browser at **`http://localhost:8080`**.
 - Interactive Discrepancy & Physics Analyzer with real-time sliders and inputs.
 - Quick Presets from NASA IGBT accelerated aging data.
 - Live Metric Cards (Absolute Delta, % Deviation, Magnitude Ratio).
-- SIH-26 Status Badges (🟢 PASS / 🟡 HOLD / 🔴 REJECT).
+- SIH-26 Status Badges ( PASS / HOLD / REJECT).
 - Multi-turn AI Chat Assistant.
 - API Key manager modal.
 
@@ -189,11 +198,11 @@ from models.chatbot_helper import explain_discrepancy, chat, set_api_key
 
 # 1. Diagnose model prediction vs user measurement:
 diag = explain_discrepancy(
-    model_type="breakdown",
-    x_input=550.0,
-    y_model=3.87e-6,
-    y_user=1.25e-5,
-    component_id="NASA-IGBT-Part-12"
+ model_type="breakdown",
+ x_input=550.0,
+ y_model=3.87e-6,
+ y_user=1.25e-5,
+ component_id="NASA-IGBT-Part-12"
 )
 
 # 2. Conversational query:
@@ -212,14 +221,14 @@ Open and run the ready-to-use demo notebook:
 
 ```
 models/
-├── chatbot.py            # Core chatbot, API connectors, & Discrepancy Diagnostic Engine (CLI)
-├── web_app.py            # Zero-dependency Web Application server (http://localhost:8080)
-├── chatbot_helper.py     # Python & Jupyter Notebook integration helper
-├── chatbot_demo.ipynb    # Interactive demo notebook with test cases
-├── models.md             # Technical documentation & usage guide
-├── breakdown.ipynb       # Vce vs Ic Breakdown Regression Model
-├── leakage.ipynb         # Applied Voltage vs Leakage Current Model
-└── turnOn.ipynb          # Gate Voltage vs Collector Current Turn-On Model
+├── chatbot.py # Core chatbot, API connectors, & Discrepancy Diagnostic Engine (CLI)
+├── web_app.py # Zero-dependency Web Application server (http://localhost:8080)
+├── chatbot_helper.py # Python & Jupyter Notebook integration helper
+├── chatbot_demo.ipynb # Interactive demo notebook with test cases
+├── models.md # Technical documentation & usage guide
+├── breakdown.ipynb # Vce vs Ic Breakdown Regression Model
+├── leakage.ipynb # Applied Voltage vs Leakage Current Model
+└── turnOn.ipynb # Gate Voltage vs Collector Current Turn-On Model
 ```
 
 ---

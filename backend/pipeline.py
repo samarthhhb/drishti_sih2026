@@ -3,9 +3,9 @@
 SIH26170 - Backend Master Screening Pipeline & Chatbot Orchestrator
 =============================================================================
 Coordinates the complete end-to-end flow:
-1. Intake unscaled user input (and optional observed user output Y_user).
-2. Deal with unscaled input -> Standardize to X_scaled.
-3. Generate output from ML Model -> Inverse scale to physical Y_model.
+1. Intake user input (and optional observed user output Y_user).
+2. Apply MinMaxScaler [0, 1] normalization.
+3. Generate output from ML Model.
 4. Explain model dynamics & discrepancy using the AI Chatbot.
 5. Persist the complete record and diagnosis into the SQLite Database.
 """
@@ -14,12 +14,10 @@ import sys
 from pathlib import Path
 from typing import Dict, Any, Optional
 
-# Ensure project root is accessible for model & backend imports
 ROOT_DIR = Path(__file__).resolve().parent.parent
 if str(ROOT_DIR) not in sys.path:
     sys.path.insert(0, str(ROOT_DIR))
 
-from backend.scaler import FeatureScaler
 from backend.model_engine import ModelEngine
 from backend.database import ScreeningDatabase
 from models.chatbot import SemiconductorChatbot, DiscrepancyAnalyzer
@@ -28,7 +26,7 @@ from models.chatbot import SemiconductorChatbot, DiscrepancyAnalyzer
 class ScreeningPipeline:
     """
     Master backend controller managing communication between:
-    User Input -> Feature Scaler -> ML Model Engine -> Chatbot Explainer -> SQLite DB.
+    User Input -> MinMaxScaler -> ML Model Engine -> Chatbot Explainer -> SQLite DB.
     """
 
     def __init__(
@@ -37,8 +35,7 @@ class ScreeningPipeline:
         ai_provider: str = "auto",
         api_key: Optional[str] = None
     ):
-        self.scaler = FeatureScaler()
-        self.model_engine = ModelEngine(scaler=self.scaler)
+        self.model_engine = ModelEngine()
         self.database = ScreeningDatabase(db_path=db_path)
         self.chatbot = SemiconductorChatbot(provider=ai_provider, api_key=api_key)
 
@@ -51,27 +48,21 @@ class ScreeningPipeline:
         use_ai: bool = True
     ) -> Dict[str, Any]:
         """
-        Execute the primary end-to-end pipeline:
-        1. Takes unscaled user input X.
-        2. Standardizes X into X_scaled.
-        3. Evaluates model to produce scaled prediction Y_scaled and physical Y_model.
-        4. If user_said_output is given, computes discrepancy and generates physics explanation.
+        Execute MinMaxScaler screening pipeline:
+        1. Takes user input X.
+        2. Evaluates model with MinMaxScaler normalization to produce physical Y_model and normalized [0, 1] values.
+        3. If user_said_output is given, computes discrepancy and generates physics explanation.
            If user_said_output is omitted, explains model dynamics at that operating point.
-        5. Saves full record into SQLite DB.
-        
-        Returns:
-            Structured dictionary with all intermediate representations,
-            predictions, explanations, and database record ID.
+        4. Saves record into SQLite DB.
         """
-        # Step 1 & 2 & 3: Run Model Inference with Automatic Scaling
+        # Step 1: Direct MinMaxScaler Model Inference
         pred = self.model_engine.predict(model_type, raw_input)
         physical_y_model = pred["physical_output"]
         scaled_x = pred["scaled_input"]
         scaled_y = pred["scaled_output"]
 
-        # Step 4: Discrepancy & Chatbot Explanation
+        # Step 2: Discrepancy & Chatbot Explanation
         if user_said_output is not None:
-            # User provided observed/ground truth output: evaluate discrepancy
             diag = self.chatbot.explain_discrepancy(
                 model_type=model_type,
                 x_input=raw_input,
@@ -90,7 +81,6 @@ class ScreeningPipeline:
             physics_causes = diag["physics_causes"]
             recommendations = diag["recommendations"]
         else:
-            # Pure model prediction mode: Explain model dynamics at this operating point
             delta = None
             pct_diff = None
             ratio = None
@@ -104,16 +94,16 @@ class ScreeningPipeline:
                 "Verify sensor telemetry matches baseline prediction."
             ]
             explanation = (
-                f"### ⚡ Model Dynamics & Prediction Summary\n"
+                f"### Model Dynamics & Prediction Summary\n"
                 f"- **Component ID**: `{component_id}`\n"
                 f"- **Model**: **{pred['model_name']}**\n"
-                f"- **Raw Input**: `{DiscrepancyAnalyzer.format_val(raw_input, pred['input_unit'])}` (Scaled: `{scaled_x:+.4f} σ`)\n"
-                f"- **Predicted Physical Output**: `{DiscrepancyAnalyzer.format_val(physical_y_model, pred['output_unit'])}` (Scaled: `{scaled_y:+.4f} σ`)\n\n"
+                f"- **Input**: `{DiscrepancyAnalyzer.format_val(raw_input, pred['input_unit'])}` (MinMax Scaled: `{scaled_x:.4f}`)\n"
+                f"- **Predicted Output**: `{DiscrepancyAnalyzer.format_val(physical_y_model, pred['output_unit'])}` (MinMax Scaled: `{scaled_y:.4f}`)\n\n"
                 f"**Dynamics Overview**:\n"
-                f"The component is evaluated under standard operational bounds. If experimental testing reveals higher leakage or shifted thresholds, submit the observed measurement to trigger discrepancy diagnostics."
+                f"The component is evaluated under standard operational bounds."
             )
 
-        # Step 5: Persist transaction into SQLite Database
+        # Step 3: Persist transaction into SQLite Database
         record_data = {
             "component_id": component_id,
             "model_type": pred["model_type"],
@@ -136,7 +126,7 @@ class ScreeningPipeline:
         
         record_id = self.database.save_screening(record_data)
 
-        # Step 6: Return complete response payload
+        # Step 4: Return complete response payload
         return {
             "record_id": record_id,
             "component_id": component_id,
@@ -149,6 +139,8 @@ class ScreeningPipeline:
             "raw_input": raw_input,
             "scaled_input": scaled_x,
             "scaled_output": scaled_y,
+            "norm_input": scaled_x,
+            "norm_output": scaled_y,
             "physical_output": physical_y_model,
             "user_said_output": user_said_output,
             "discrepancy": {
@@ -163,22 +155,14 @@ class ScreeningPipeline:
             "recommendations": recommendations,
             "chatbot_explanation": explanation,
             "ai_provider": self.chatbot.api_client.provider,
-            "scaling_metadata": pred["scaling_parameters"]
+            "minmax_bounds": pred.get("minmax_bounds", {})
         }
 
     def chat(self, user_message: str, session_id: str = "default_session") -> Dict[str, Any]:
-        """
-        Conversational chat interface with automatic persistence to SQLite database.
-        """
-        # Save user message
+        """Conversational chat interface with automatic persistence to SQLite database."""
         self.database.save_chat_message(session_id, "user", user_message)
-
-        # Generate response from chatbot
         reply = self.chatbot.chat(user_message)
-
-        # Save assistant message
         self.database.save_chat_message(session_id, "assistant", reply)
-
         return {
             "session_id": session_id,
             "reply": reply,
@@ -196,10 +180,8 @@ if __name__ == "__main__":
         component_id="NASA-IGBT-TEST-01"
     )
     print(f"Record ID: {res['record_id']}")
-    print(f"Raw Input: {res['raw_input']} V -> Scaled: {res['scaled_input']:.4f}")
-    print(f"Model Output: {res['physical_output']:.4e} A -> Scaled: {res['scaled_output']:.4f}")
+    print(f"Input: {res['raw_input']} V (MinMax Scaled: {res['scaled_input']})")
+    print(f"Model Output: {res['physical_output']:.4e} A (MinMax Scaled: {res['scaled_output']})")
     print(f"User Output: {res['user_said_output']:.4e} A")
     print(f"Screening Decision: {res['discrepancy']['risk_decision']}")
-    print("\nChatbot Explanation Preview:")
-    print(res["chatbot_explanation"][:250] + "...")
-    print("\n✅ Pipeline executed successfully!")
+    print("\nPipeline executed successfully!")

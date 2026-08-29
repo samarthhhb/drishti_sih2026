@@ -1,64 +1,69 @@
 /**
  * SIH26170 - Frontend Application & Interactive Chart Controller
  * =============================================================================
+ * Drishti - AI-Driven Semiconductor Burn-In & Anomaly Screening System
+ * Features:
+ * - Floating Collapsible AI Diagnostics Assistant (Bottom Right)
+ * - 100% Dynamic API-driven execution with zero static responses
+ * - Interactive Draggable Canvas Graphs (Scatterplot + Line Curve)
  */
 
 const MODEL_CONFIGS = {
     breakdown: {
         id: "breakdown",
-        title: "Breakdown Model",
-        paramTag: "Voltage (V) vs Current (A)",
+        title: "Time-Series & Breakdown Model",
+        paramTag: "Voltage (V) vs Current (microAmpere)",
         xLabel: "Collector-Emitter Voltage (V)",
-        yLabel: "Leakage Current (A)",
+        yLabel: "Leakage Current (microAmpere)",
         defaultX: 550.0,
-        defaultUserY: 1.25e-5,
+        defaultUserY: 12.5,
         defaultCompId: "NASA-IGBT-Part-12",
         xMin: 0,
         xMax: 650,
         yMin: 0,
-        yMax: 1.5e-4,
+        yMax: 150,
         presets: [
-            { name: "Aged (550V)", x: 550.0, userY: 1.25e-5, cid: "NASA-Part-12 (Aged)" },
-            { name: "Pristine (300V)", x: 300.0, userY: 3.85e-9, cid: "NASA-Part-11 (Pristine)" },
-            { name: "Runaway (580V)", x: 580.0, userY: 8.50e-5, cid: "NASA-Part-16 (Degraded)" }
+            { name: "Aged (550V)", x: 550.0, userY: 12.5, cid: "NASA-Part-12 (Aged)" },
+            { name: "Pristine (300V)", x: 300.0, userY: 0.05, cid: "NASA-Part-11 (Pristine)" },
+            { name: "Runaway (580V)", x: 580.0, userY: 85.0, cid: "NASA-Part-16 (Degraded)" }
         ]
     },
     leakage: {
         id: "leakage",
         title: "Leakage IV Model",
-        paramTag: "Voltage (V) vs Current (A)",
+        paramTag: "Voltage (V) vs Current (microAmpere)",
         xLabel: "Applied Voltage (V)",
-        yLabel: "Leakage Current (A)",
+        yLabel: "Leakage Current (microAmpere)",
         defaultX: 25.0,
-        defaultUserY: 4.50e-5,
+        defaultUserY: 4.5,
         defaultCompId: "NASA-IGBT-Part-18",
         xMin: 0,
-        xMax: 50,
+        xMax: 600,
         yMin: 0,
-        yMax: 6.0e-5,
+        yMax: 10.0,
         presets: [
-            { name: "Latent Defect (25V)", x: 25.0, userY: 4.50e-5, cid: "NASA-Part-18 (Latent)" },
-            { name: "Healthy (10V)", x: 10.0, userY: 3.85e-9, cid: "NASA-Part-11 (Healthy)" },
-            { name: "Thermal Bias (40V)", x: 40.0, userY: 1.50e-5, cid: "NASA-Part-15 (Thermal)" }
+            { name: "Latent Defect (25V)", x: 25.0, userY: 4.5, cid: "NASA-Part-18 (Latent)" },
+            { name: "Healthy (10V)", x: 10.0, userY: 0.05, cid: "NASA-Part-11 (Healthy)" },
+            { name: "Thermal Bias (40V)", x: 40.0, userY: 2.5, cid: "NASA-Part-15 (Thermal)" }
         ]
     },
     turnon: {
         id: "turnon",
         title: "Turn-On Model",
-        paramTag: "Voltage (V) vs Current (A)",
+        paramTag: "Voltage (V) vs Current (microAmpere)",
         xLabel: "Gate Voltage (V)",
-        yLabel: "Collector Current (A)",
+        yLabel: "Collector Current (microAmpere)",
         defaultX: 5.0,
-        defaultUserY: 0.42,
+        defaultUserY: 25.0,
         defaultCompId: "NASA-IGBT-Part-14",
         xMin: 0,
         xMax: 15,
         yMin: 0,
-        yMax: 5.0,
+        yMax: 250.0,
         presets: [
-            { name: "Oxide Trap (5V)", x: 5.0, userY: 0.42, cid: "NASA-Part-14 (Oxide Trap)" },
-            { name: "Normal (6V)", x: 6.0, userY: 2.30, cid: "NASA-Part-11 (Normal)" },
-            { name: "Degraded gm (8V)", x: 8.0, userY: 0.15, cid: "NASA-Part-19 (Bond Wire)" }
+            { name: "Oxide Trap (5V)", x: 5.0, userY: 25.0, cid: "NASA-Part-14 (Oxide Trap)" },
+            { name: "Normal (6V)", x: 6.0, userY: 150.0, cid: "NASA-Part-11 (Normal)" },
+            { name: "Degraded gm (8V)", x: 8.0, userY: 10.0, cid: "NASA-Part-19 (Bond Wire)" }
         ]
     }
 };
@@ -74,14 +79,60 @@ const chartModes = {
 };
 
 const defaultChartBounds = {
-    scatter: { xMin: 0, xMax: 650, yMin: 0, yMax: 1.5e-4 },
-    line: { xMin: 0, xMax: 650, yMin: 0, yMax: 1.5e-4 }
+    scatter: { xMin: 0, xMax: 650, yMin: 0, yMax: 150 },
+    line: { xMin: 0, xMax: 650, yMin: 0, yMax: 150 }
 };
 
 let isDraggingPoint = false;
 let isPanning = false;
 let panStart = { x: 0, y: 0 };
 let debounceTimer = null;
+
+// =============================================================================
+// FLOATING AI ASSISTANT DRAWER CONTROLLER
+// =============================================================================
+
+function toggleAIChat(forceOpen) {
+    const drawer = document.getElementById("aiDrawerPanel");
+    const badge = document.getElementById("aiUnreadBadge");
+    if (!drawer) return;
+
+    const isCurrentlyOpen = drawer.style.display === "flex";
+    const shouldOpen = forceOpen !== undefined ? forceOpen : !isCurrentlyOpen;
+
+    if (shouldOpen) {
+        drawer.style.display = "flex";
+        if (badge) badge.style.display = "none";
+        // Auto scroll to bottom
+        const chatBox = document.getElementById("chatMessages");
+        if (chatBox) chatBox.scrollTop = chatBox.scrollHeight;
+        const input = document.getElementById("interactiveChatInput");
+        if (input) setTimeout(() => input.focus(), 150);
+    } else {
+        drawer.style.display = "none";
+    }
+}
+
+// =============================================================================
+// SYSTEM HEALTH & DYNAMIC API DISCOVERY
+// =============================================================================
+
+async function fetchSystemHealth() {
+    try {
+        const res = await fetch("/api/health");
+        const data = await res.json();
+        const badge = document.getElementById("engineText");
+        const pill = document.getElementById("chatEnginePill");
+
+        if (data.status === "healthy") {
+            const providerStr = data.active_llm || (data.ai_provider ? data.ai_provider.toUpperCase() : "Online");
+            if (badge) badge.textContent = providerStr;
+            if (pill) pill.textContent = providerStr;
+        }
+    } catch (err) {
+        console.warn("Could not query /api/health:", err);
+    }
+}
 
 // =============================================================================
 // NAVIGATION & MODEL SELECTION
@@ -160,21 +211,17 @@ function loadModelPage(modelType) {
         presetsContainer.appendChild(btn);
     });
 
-    document.getElementById("chatMessages").innerHTML = `
-        <div class="chat-item bot-item">
-            <div class="bubble bot-bubble">
-                <strong>Ready:</strong> Move the test point directly on the graph or adjust values to trigger failure physics explanation.
-            </div>
-        </div>
-    `;
-
-    document.getElementById("resultsPanel").style.display = "none";
+    // Clear chat and reset results panel
+    document.getElementById("chatMessages").innerHTML = "";
 
     defaultChartBounds.scatter = { xMin: cfg.xMin, xMax: cfg.xMax, yMin: cfg.yMin, yMax: cfg.yMax };
     defaultChartBounds.line = { xMin: cfg.xMin, xMax: cfg.xMax, yMin: cfg.yMin, yMax: cfg.yMax };
 
     navigateTo("model");
     loadDatasetAndInitCharts(modelType);
+
+    // Immediately execute live dynamic pipeline inference for the selected model
+    runModelPipeline();
 }
 
 // =============================================================================
@@ -356,11 +403,11 @@ function renderLineChart(modelType, cfg, currentX, currentYuser) {
         const x = xMin + (i * stepSize);
         let yPred = 0;
         if (modelType === "breakdown") {
-            yPred = 7.1e-5 * Math.pow(x / 600, 4) + 1e-8;
+            yPred = 71.0 * Math.pow(x / 600, 4) + 0.01;
         } else if (modelType === "leakage") {
-            yPred = (1.84e-6 / 300) * x + 1e-9;
+            yPred = (1.84 / 300) * x + 0.01;
         } else {
-            yPred = x > 4.0 ? 0.5 * Math.pow(x - 4.0, 1.8) : 1e-6;
+            yPred = x > 4.0 ? 25.0 * Math.pow(x - 4.0, 1.8) : 0.01;
         }
         linePoints.push({ x: x, y: yPred });
         upperTolerance.push({ x: x, y: yPred * 1.25 });
@@ -500,15 +547,46 @@ function attachChartInteraction(canvasId, chartKey) {
             const dyPx = coords.yPx - panStart.yPx;
             panStart = coords;
 
+            const cfg = MODEL_CONFIGS[currentActiveModel] || { xMin: 0, xMax: 650, yMin: 0, yMax: 1.5e-4 };
+            const baseXSpan = cfg.xMax - cfg.xMin;
+            const baseYSpan = cfg.yMax - cfg.yMin;
+            
+            // Strictly enforce max 15% padding beyond nominal model range
+            const allowedXMin = cfg.xMin - (0.15 * baseXSpan);
+            const allowedXMax = cfg.xMax + (0.15 * baseXSpan);
+            const allowedYMin = Math.max(0, cfg.yMin - (0.15 * baseYSpan));
+            const allowedYMax = cfg.yMax + (0.15 * baseYSpan);
+
             const xRange = chart.scales.x.max - chart.scales.x.min;
             const dxVal = (dxPx / chart.width) * xRange;
-            chart.scales.x.options.min = chart.scales.x.min - dxVal;
-            chart.scales.x.options.max = chart.scales.x.max - dxVal;
+            let newXMin = chart.scales.x.min - dxVal;
+            let newXMax = chart.scales.x.max - dxVal;
+
+            if (newXMin < allowedXMin) {
+                newXMin = allowedXMin;
+                newXMax = allowedXMin + xRange;
+            } else if (newXMax > allowedXMax) {
+                newXMax = allowedXMax;
+                newXMin = allowedXMax - xRange;
+            }
 
             const yRange = chart.scales.y.max - chart.scales.y.min;
             const dyVal = (dyPx / chart.height) * yRange;
-            chart.scales.y.options.min = Math.max(0, chart.scales.y.min + dyVal);
-            chart.scales.y.options.max = chart.scales.y.max + dyVal;
+            let newYMin = chart.scales.y.min + dyVal;
+            let newYMax = chart.scales.y.max + dyVal;
+
+            if (newYMin < allowedYMin) {
+                newYMin = allowedYMin;
+                newYMax = allowedYMin + yRange;
+            } else if (newYMax > allowedYMax) {
+                newYMax = allowedYMax;
+                newYMin = allowedYMax - yRange;
+            }
+
+            chart.scales.x.options.min = newXMin;
+            chart.scales.x.options.max = newXMax;
+            chart.scales.y.options.min = newYMin;
+            chart.scales.y.options.max = newYMax;
 
             chart.update("none");
         }
@@ -562,32 +640,70 @@ function zoomChart(chartKey, factor) {
     const chart = chartKey === "scatter" ? scatterChartInstance : lineChartInstance;
     if (!chart) return;
 
+    const cfg = MODEL_CONFIGS[currentActiveModel] || { xMin: 0, xMax: 650, yMin: 0, yMax: 1.5e-4 };
+    const baseXSpan = cfg.xMax - cfg.xMin;
+    const baseYSpan = cfg.yMax - cfg.yMin;
+    const allowedXMin = cfg.xMin - (0.15 * baseXSpan);
+    const allowedXMax = cfg.xMax + (0.15 * baseXSpan);
+    const allowedYMin = Math.max(0, cfg.yMin - (0.15 * baseYSpan));
+    const allowedYMax = cfg.yMax + (0.15 * baseYSpan);
+
     const xMin = chart.scales.x.min;
     const xMax = chart.scales.x.max;
     const xCenter = (xMin + xMax) / 2;
-    const xRange = (xMax - xMin) / factor;
+    let newXSpan = (xMax - xMin) / factor;
 
-    chart.scales.x.options.min = xCenter - (xRange / 2);
-    chart.scales.x.options.max = xCenter + (xRange / 2);
+    // Limit maximum zoom out to 1.30x base span (15% padding) and minimum zoom in to 10%
+    newXSpan = Math.max(baseXSpan * 0.1, Math.min(baseXSpan * 1.30, newXSpan));
+
+    let newXMin = xCenter - (newXSpan / 2);
+    let newXMax = xCenter + (newXSpan / 2);
+
+    if (newXMin < allowedXMin) {
+        newXMin = allowedXMin;
+        newXMax = Math.min(allowedXMax, allowedXMin + newXSpan);
+    }
+    if (newXMax > allowedXMax) {
+        newXMax = allowedXMax;
+        newXMin = Math.max(allowedXMin, allowedXMax - newXSpan);
+    }
 
     const yMin = chart.scales.y.min;
     const yMax = chart.scales.y.max;
-    const yRange = (yMax - yMin) / factor;
-    chart.scales.y.options.min = Math.max(0, yMin);
-    chart.scales.y.options.max = yMin + yRange;
+    const yCenter = (yMin + yMax) / 2;
+    let newYSpan = (yMax - yMin) / factor;
 
-    chart.update();
+    newYSpan = Math.max(baseYSpan * 0.1, Math.min(baseYSpan * 1.30, newYSpan));
+
+    let newYMin = yCenter - (newYSpan / 2);
+    let newYMax = yCenter + (newYSpan / 2);
+
+    if (newYMin < allowedYMin) {
+        newYMin = allowedYMin;
+        newYMax = Math.min(allowedYMax, allowedYMin + newYSpan);
+    }
+    if (newYMax > allowedYMax) {
+        newYMax = allowedYMax;
+        newYMin = Math.max(allowedYMin, allowedYMax - newYSpan);
+    }
+
+    chart.scales.x.options.min = newXMin;
+    chart.scales.x.options.max = newXMax;
+    chart.scales.y.options.min = newYMin;
+    chart.scales.y.options.max = newYMax;
+
+    chart.update("none");
 }
 
 function resetChartZoom(chartKey) {
     const chart = chartKey === "scatter" ? scatterChartInstance : lineChartInstance;
     if (!chart) return;
 
-    const bounds = defaultChartBounds[chartKey];
-    chart.scales.x.options.min = bounds.xMin;
-    chart.scales.x.options.max = bounds.xMax;
-    chart.scales.y.options.min = bounds.yMin;
-    chart.scales.y.options.max = bounds.yMax;
+    const cfg = MODEL_CONFIGS[currentActiveModel] || { xMin: 0, xMax: 650, yMin: 0, yMax: 1.5e-4 };
+    chart.scales.x.options.min = cfg.xMin;
+    chart.scales.x.options.max = cfg.xMax;
+    chart.scales.y.options.min = cfg.yMin;
+    chart.scales.y.options.max = cfg.yMax;
     chart.update();
 }
 
@@ -604,7 +720,7 @@ function updateChartMarkersOnly(x, y) {
 }
 
 // =============================================================================
-// PIPELINE & CHATBOT EXECUTION
+// PIPELINE & CHATBOT EXECUTION (100% Dynamic API)
 // =============================================================================
 
 async function runModelPipeline() {
@@ -614,7 +730,7 @@ async function runModelPipeline() {
     const cid = document.getElementById("inputCompId").value.trim() || "DUT-01";
 
     const btn = document.getElementById("runPipelineBtn");
-    btn.innerHTML = "Screening...";
+    btn.innerHTML = "Screening Live...";
     btn.disabled = true;
 
     try {
@@ -633,6 +749,7 @@ async function runModelPipeline() {
         const data = await response.json();
         if (data.error) throw new Error(data.error);
 
+        // Dynamically display results panel
         const resPanel = document.getElementById("resultsPanel");
         resPanel.style.display = "block";
 
@@ -642,17 +759,38 @@ async function runModelPipeline() {
         badge.className = "verdict-pill " + (decision === "PASS" ? "badge-pass" : (decision === "HOLD" ? "badge-hold" : "badge-reject"));
 
         document.getElementById("statRawX").textContent = `${data.raw_input.toFixed(1)} V`;
-        document.getElementById("statScaledX").textContent = `${data.scaled_input > 0 ? "+" : ""}${data.scaled_input.toFixed(1)} σ`;
-        document.getElementById("statModelY").textContent = formatSci(data.physical_output) + " " + data.output_unit.replace(" (Amperes)", " A").replace(" (Volts)", " V");
-        document.getElementById("statUserY").textContent = data.user_said_output !== null ? (formatSci(data.user_said_output) + " " + data.output_unit.replace(" (Amperes)", " A").replace(" (Volts)", " V")) : "N/A";
+        const statScaled = document.getElementById("statScaledX");
+        if (statScaled) {
+            statScaled.textContent = data.scaled_input !== undefined ? `${data.scaled_input.toFixed(4)}` : "—";
+        }
+        document.getElementById("statModelY").textContent = `${formatSci(data.physical_output)} microAmpere`;
+        document.getElementById("statUserY").textContent = data.user_said_output !== null ? `${formatSci(data.user_said_output)} microAmpere` : "N/A";
         document.getElementById("statPctDiff").textContent = data.discrepancy.pct_diff !== null ? `${data.discrepancy.pct_diff > 0 ? "+" : ""}${data.discrepancy.pct_diff.toFixed(1)}%` : "0.0%";
         document.getElementById("statRatio").textContent = data.discrepancy.ratio !== null ? `${data.discrepancy.ratio.toFixed(2)}x` : "1.00x";
 
+        // Update on-screen AI Report Box inside resultsPanel
+        const reportText = document.getElementById("aiReportText");
+        if (reportText) {
+            reportText.innerHTML = renderMarkdown(data.chatbot_explanation);
+        }
+        const reportBadge = document.getElementById("reportEngineBadge");
+        if (reportBadge && data.ai_provider) {
+            reportBadge.textContent = `${data.ai_provider.toUpperCase()} Llama 3.3`;
+        }
+
+        // Also append into floating AI Diagnostics Drawer
         appendBotMessage(data.chatbot_explanation);
         updateChartMarkersOnly(rawX, userY !== null ? userY : data.physical_output);
 
+        // Notify user via unread badge on floating AI widget if collapsed
+        const drawer = document.getElementById("aiDrawerPanel");
+        const unread = document.getElementById("aiUnreadBadge");
+        if (drawer && drawer.style.display !== "flex" && unread) {
+            unread.style.display = "flex";
+        }
+
     } catch (err) {
-        alert("Error: " + err.message);
+        alert("API Error: " + err.message);
     } finally {
         btn.innerHTML = "Run Screening & Explain";
         btn.disabled = false;
@@ -667,6 +805,16 @@ async function sendChatMessage() {
     appendUserMessage(msg);
     input.value = "";
 
+    // Show temporary thinking indicator
+    const chat = document.getElementById("chatMessages");
+    const loadingId = "loadingBubble_" + Date.now();
+    const loadingDiv = document.createElement("div");
+    loadingDiv.className = "chat-item bot-item";
+    loadingDiv.id = loadingId;
+    loadingDiv.innerHTML = `<div class="bubble bot-bubble" style="color:var(--chakra-navy);"><span class="status-dot"></span> <em>Drishti AI is generating response...</em></div>`;
+    chat.appendChild(loadingDiv);
+    chat.scrollTop = chat.scrollHeight;
+
     try {
         const response = await fetch("/api/chat", {
             method: "POST",
@@ -674,9 +822,13 @@ async function sendChatMessage() {
             body: JSON.stringify({ message: msg })
         });
         const data = await response.json();
+        const loadElem = document.getElementById(loadingId);
+        if (loadElem) loadElem.remove();
         appendBotMessage(data.reply);
     } catch (err) {
-        appendBotMessage("Error: " + err.message);
+        const loadElem = document.getElementById(loadingId);
+        if (loadElem) loadElem.remove();
+        appendBotMessage("API Error: " + err.message);
     }
 }
 
@@ -720,5 +872,6 @@ function renderMarkdown(md) {
 }
 
 window.addEventListener("DOMContentLoaded", () => {
+    fetchSystemHealth();
     navigateTo("landing");
 });

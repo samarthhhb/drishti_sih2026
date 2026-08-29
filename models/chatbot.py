@@ -38,9 +38,9 @@ MODEL_DEFINITIONS = {
         "input_param": "Collector-Emitter Voltage",
         "input_unit": "V",
         "output_param": "Leakage Current",
-        "output_unit": "A",
+        "output_unit": "microAmpere",
         "typical_input_range": (0.0, 650.0),
-        "typical_output_range": (1e-9, 1e-4),
+        "typical_output_range": (0.0, 150.0),
         "nominal_breakdown_voltage": 600.0,
         "description": "Models collector-emitter leakage current across applied collector-emitter voltage.",
         "key_dynamics": [
@@ -54,10 +54,10 @@ MODEL_DEFINITIONS = {
         "input_param": "Applied Voltage",
         "input_unit": "V",
         "output_param": "Leakage Current",
-        "output_unit": "A",
-        "typical_input_range": (0.0, 50.0),
-        "typical_output_range": (1e-9, 1e-5),
-        "nominal_limit": 5e-5,
+        "output_unit": "microAmpere",
+        "typical_input_range": (0.0, 600.0),
+        "typical_output_range": (0.0, 10.0),
+        "nominal_limit": 50.0,
         "description": "Models reverse leakage current as a function of applied bias voltage.",
         "key_dynamics": [
             "Ohmic & sub-threshold leakage: Governed by Shockley-Read-Hall (SRH) generation-recombination.",
@@ -70,9 +70,9 @@ MODEL_DEFINITIONS = {
         "input_param": "Gate Voltage",
         "input_unit": "V",
         "output_param": "Collector Current",
-        "output_unit": "A",
+        "output_unit": "microAmpere",
         "typical_input_range": (0.0, 15.0),
-        "typical_output_range": (0.0, 30.0),
+        "typical_output_range": (0.0, 250.0),
         "nominal_vth": 4.0,
         "description": "Models IGBT transfer characteristics (Gate Voltage vs Collector Current).",
         "key_dynamics": [
@@ -83,7 +83,7 @@ MODEL_DEFINITIONS = {
     }
 }
 
-SYSTEM_PROMPT = """You are 'SemiconExplainer AI' for Project SIH26170 (Semiconductor Stress Screening).
+SYSTEM_PROMPT = """You are 'Drishti AI' for Project SIH26170 (Semiconductor Stress Screening).
 IMPORTANT INSTRUCTION: Always provide CONCISE, DIRECT, and HIGH-IMPACT answers. Avoid conversational filler or long preambles.
 For discrepancy explanations, format in 3 crisp bullet points:
 1. **Discrepancy**: Exact drift magnitude (% and ratio).
@@ -659,7 +659,7 @@ Keep it strictly under 100 words.
 
     def _format_expert_report(self, diag: Dict[str, Any], component_id: str) -> str:
         """Format a concise, high-impact diagnostic report."""
-        badge = "🟢 PASS" if diag["risk_decision"] == "PASS" else ("🟡 HOLD" if diag["risk_decision"] == "HOLD" else "🔴 REJECT")
+        badge = " PASS" if diag["risk_decision"] == "PASS" else (" HOLD" if diag["risk_decision"] == "HOLD" else " REJECT")
         
         report = []
         report.append(f"**Screening Verdict: {badge}** (`{component_id}` • {diag['model_name']})\n")
@@ -678,7 +678,7 @@ Keep it strictly under 100 words.
         q = query.lower()
         if "breakdown" in q:
             return (
-                "### ⚡ Breakdown Model Dynamics (IRG4BC30K IGBT)\n"
+                "###  Breakdown Model Dynamics (IRG4BC30K IGBT)\n"
                 "- **Dataset**: NASA Accelerated Aging Dataset (`final_data/dataset/Breakdown.csv`).\n"
                 "- **Input**: Collector-Emitter Voltage ($V_{ce}$, Volts).\n"
                 "- **Output**: Collector Leakage Current ($I_c$, Amperes).\n"
@@ -688,7 +688,7 @@ Keep it strictly under 100 words.
             )
         elif "leakage" in q:
             return (
-                "### 🔍 Leakage Current IV Model Dynamics\n"
+                "###  Leakage Current IV Model Dynamics\n"
                 "- **Dataset**: `final_data/dataset/LeakageIV.csv`.\n"
                 "- **Input**: Applied Voltage ($V$, Volts).\n"
                 "- **Output**: Leakage Current ($I_{leak}$, Amperes).\n"
@@ -697,7 +697,7 @@ Keep it strictly under 100 words.
             )
         elif "turn" in q or "on" in q or "vge" in q or "vth" in q:
             return (
-                "### 🔄 Turn-On Characteristics Model Dynamics\n"
+                "###  Turn-On Characteristics Model Dynamics\n"
                 "- **Dataset**: `final_data/dataset/TurnOn.csv`.\n"
                 "- **Input**: Gate Voltage ($V_{ge}$, Volts).\n"
                 "- **Output**: Collector Current ($I_c$, Amperes).\n"
@@ -715,13 +715,13 @@ Keep it strictly under 100 words.
             )
         else:
             return (
-                "### 🤖 SemiconExplainer AI - Model Dynamics & Output Discrepancy Assistant\n"
+                "###  Drishti AI - Model Dynamics & Output Discrepancy Assistant\n"
                 "I am ready to help you analyze semiconductor models and explain discrepancies between model predictions and user-observed ground truth.\n\n"
                 "**Capabilities**:\n"
-                "- 📈 Explain model physics for **Breakdown**, **Leakage IV**, and **Turn-On** characteristics.\n"
-                r"- 🔬 Diagnose physical failure modes (impact ionization, SRH recombination, $\Delta V_{th}$, solder fatigue)." "\n"
-                "- 🛡️ Classify screening decisions (**PASS / HOLD / REJECT**).\n"
-                "- 🌐 Free API support for Gemini, Groq, OpenRouter, and local Ollama.\n\n"
+                "-  Explain model physics for **Breakdown**, **Leakage IV**, and **Turn-On** characteristics.\n"
+                r"-  Diagnose physical failure modes (impact ionization, SRH recombination, $\Delta V_{th}$, solder fatigue)." "\n"
+                "-  Classify screening decisions (**PASS / HOLD / REJECT**).\n"
+                "-  Free API support for Gemini, Groq, OpenRouter, and local Ollama.\n\n"
                 "*Try asking: 'Explain the difference between model output 3.8uA and user output 12uA at 550V in breakdown model'*"
             )
 
@@ -759,7 +759,7 @@ def run_cli():
     bot = SemiconductorChatbot()
     
     print("=" * 75)
-    print(" 🚀 SIH26170 - Semiconductor Model Explainer & Discrepancy Chatbot")
+    print("  SIH26170 - Semiconductor Model Explainer & Discrepancy Chatbot")
     print("=" * 75)
     print("Free AI API Support: Gemini Free Tier | Groq Free Tier | Offline Physics Engine")
     print("Active Mode:", f"{bot.api_client.provider.upper()} API" if bot.api_client.provider != "offline" else "Built-in Physics Engine (100% Free / Offline)")
@@ -775,12 +775,12 @@ def run_cli():
 
     while True:
         try:
-            user_input = input("\n👤 User > ").strip()
+            user_input = input("\n User > ").strip()
             if not user_input:
                 continue
 
             if user_input.lower() in ("exit", "quit", "q"):
-                print("\n👋 Exiting Semiconductor Model Explainer. Goodbye!")
+                print("\n Exiting Semiconductor Model Explainer. Goodbye!")
                 break
 
             elif user_input.lower() == "api":
@@ -790,23 +790,23 @@ def run_cli():
                 if choice == "1":
                     key = input("Enter GEMINI_API_KEY: ").strip()
                     bot.set_api_key("gemini", key)
-                    print("✅ Gemini API provider configured.")
+                    print(" Gemini API provider configured.")
                 elif choice == "2":
                     key = input("Enter GROQ_API_KEY: ").strip()
                     bot.set_api_key("groq", key)
-                    print("✅ Groq API provider configured.")
+                    print(" Groq API provider configured.")
                 elif choice == "3":
                     key = input("Enter OPENROUTER_API_KEY: ").strip()
                     bot.set_api_key("openrouter", key)
-                    print("✅ OpenRouter provider configured.")
+                    print(" OpenRouter provider configured.")
                 else:
                     bot.set_api_key("offline", "")
-                    print("✅ Switched to 100% Free Offline Physics Engine.")
+                    print(" Switched to 100% Free Offline Physics Engine.")
 
             elif user_input.lower() == "models":
                 print("\n" + "=" * 70)
                 for k, v in MODEL_DEFINITIONS.items():
-                    print(f"📌 {v['name']}")
+                    print(f" {v['name']}")
                     print(f"   - Input : {v['input_param']} ({v['input_unit']})")
                     print(f"   - Output: {v['output_param']} ({v['output_unit']})")
                     print(f"   - Info  : {v['description']}")
@@ -839,19 +839,19 @@ def run_cli():
                 y_usr = float(input("Enter User Said / Observed Output (Y_user): ").strip())
                 cid = input("Enter Component ID [default=DUT-01]: ").strip() or "DUT-01"
 
-                print("\n⏳ Analyzing discrepancy and evaluating semiconductor physics...")
+                print("\n Analyzing discrepancy and evaluating semiconductor physics...")
                 diag = bot.explain_discrepancy(m_type, x_val, y_mod, y_usr, component_id=cid)
                 print("\n" + diag["final_explanation"])
 
             else:
                 response = bot.chat(user_input)
-                print(f"\n🤖 SemiconExplainer AI:\n{response}")
+                print(f"\n Drishti AI:\n{response}")
 
         except KeyboardInterrupt:
-            print("\n👋 Exiting...")
+            print("\n Exiting...")
             break
         except Exception as e:
-            print(f"\n❌ Error: {e}")
+            print(f"\n Error: {e}")
 
 
 if __name__ == "__main__":

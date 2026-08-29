@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dhrishti - Semiconductor Component Screening</title>
+    <title>Drishti - Semiconductor Component Screening</title>
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -26,7 +26,7 @@
         <div class="nav-brand" onclick="navigateTo('landing')">
             <div class="brand-badge">SIH26170</div>
             <div class="brand-text">
-                <span class="brand-title">Dhrishti</span>
+                <span class="brand-title">Drishti</span>
                 <span class="brand-sub">Insightful Vision • SIT Pune</span>
             </div>
         </div>
@@ -39,7 +39,7 @@
         </nav>
         <div class="engine-badge">
             <span class="status-dot"></span>
-            <span id="engineText">Groq Llama 3.3 Active</span>
+            <span id="engineText">Connecting to AI Engine...</span>
         </div>
     </header>
 
@@ -64,7 +64,7 @@
                     <div class="card-body">
                         <div class="card-icon-box icon-orange">👥</div>
                         <h2 class="card-heading">About Us</h2>
-                        <p class="card-text">Team Dhrishti overview, screening pipeline, and official SIH26170 problem
+                        <p class="card-text">Team Drishti overview, screening pipeline, and official SIH26170 problem
                             statement.</p>
                         <span class="card-action text-orange">View Details &rarr;</span>
                     </div>
@@ -75,9 +75,8 @@
                     <div class="card-header-bar bar-blue"></div>
                     <div class="card-body">
                         <div class="card-icon-box icon-blue">⚡</div>
-                        <h2 class="card-heading">Breakdown Model</h2>
-                        <p class="card-text">Collector-Emitter Voltage (V) vs Leakage Current (A). Detects avalanche
-                            breakdown knee shift.</p>
+                        <h2 class="card-heading">Time-Series & Breakdown</h2>
+                        <p class="card-text">Collector-Emitter Voltage (V) vs Leakage Current (microAmpere). Time-series degradation forecasting & avalanche breakdown prediction.</p>
                         <span class="card-action text-blue">Open Model &rarr;</span>
                     </div>
                 </div>
@@ -88,8 +87,7 @@
                     <div class="card-body">
                         <div class="card-icon-box icon-green">🔍</div>
                         <h2 class="card-heading">Leakage IV Model</h2>
-                        <p class="card-text">Applied Voltage (V) vs Leakage Current (A). Detects Shockley-Read-Hall
-                            generation.</p>
+                        <p class="card-text">Applied Voltage (V) vs Leakage Current (microAmpere). Detects Shockley-Read-Hall deep-level generation.</p>
                         <span class="card-action text-green">Open Model &rarr;</span>
                     </div>
                 </div>
@@ -100,8 +98,7 @@
                     <div class="card-body">
                         <div class="card-icon-box icon-navy">🔄</div>
                         <h2 class="card-heading">Turn-On Model</h2>
-                        <p class="card-text">Gate Voltage (V) vs Collector Current (A). Detects positive threshold
-                            voltage shift.</p>
+                        <p class="card-text">Gate Voltage (V) vs Collector Current (microAmpere). Detects positive threshold voltage shift.</p>
                         <span class="card-action text-navy">Open Model &rarr;</span>
                     </div>
                 </div>
@@ -110,7 +107,7 @@
 
         <!-- ============================================================= -->
         <!-- VIEW 2: INDIVIDUAL MODEL SPLIT-SCREEN VIEW                    -->
-        <!-- Left: Model & Chatbot | Right: Scatterplot & Line Chart       -->
+        <!-- Left: Model Controls & Results | Right: Graphs (Compulsory)  -->
         <!-- ============================================================= -->
         <section id="view-model" class="view-section">
             <div class="model-topbar">
@@ -124,7 +121,7 @@
             <!-- SPLIT SCREEN: LEFT vs RIGHT -->
             <div class="split-layout">
 
-                <!-- LEFT COLUMN: MODEL & CHATBOT -->
+                <!-- LEFT COLUMN: MODEL CONTROLS & SCREENING METRICS -->
                 <div class="col-left">
 
                     <!-- INPUT & SCREENING CONTROLS -->
@@ -157,18 +154,18 @@
                                 </div>
 
                                 <div class="field">
-                                    <label for="inputUserY" id="labelUserY">Measured Current (A)</label>
-                                    <input type="number" step="any" id="inputUserY" class="input-text" value="1.25e-5"
+                                    <label for="inputUserY" id="labelUserY">Measured Current (microAmpere)</label>
+                                    <input type="number" step="any" id="inputUserY" class="input-text" value="12.5"
                                         onchange="onInputChangeY(this.value)">
                                 </div>
 
                                 <div class="field">
                                     <div class="field-header">
                                         <span class="field-sublabel">Current Slider</span>
-                                        <span class="val-badge text-orange" id="sliderValY">1.25e-5 A</span>
+                                        <span class="val-badge text-orange" id="sliderValY">12.50 uA</span>
                                     </div>
-                                    <input type="range" id="sliderY" class="range-slider slider-orange" min="-9"
-                                        max="-3" step="0.05" value="-4.9" oninput="onSliderChangeY(this.value)">
+                                    <input type="range" id="sliderY" class="range-slider slider-orange" min="0"
+                                        max="150" step="0.1" value="12.5" oninput="onSliderChangeY(this.value)">
                                 </div>
 
                                 <!-- Presets -->
@@ -184,66 +181,59 @@
                         </div>
                     </div>
 
-                    <!-- SCREENING RESULTS & METRICS -->
+                    <!-- SCREENING RESULTS & METRICS (Live Dynamic Data) -->
                     <div class="panel" id="resultsPanel" style="display:none;">
                         <div class="panel-head">
                             <h3>Screening Result</h3>
-                            <span class="verdict-pill" id="riskDecisionBadge">PASS</span>
+                            <span class="verdict-pill" id="riskDecisionBadge">—</span>
                         </div>
                         <div class="panel-body">
                             <div class="metrics-grid">
                                 <div class="metric-card">
-                                    <div class="metric-val" id="statRawX">550.0 V</div>
-                                    <div class="metric-key">Input Voltage</div>
+                                    <div class="metric-val" id="statRawX">—</div>
+                                    <div class="metric-key">Input Voltage (V)</div>
                                 </div>
                                 <div class="metric-card">
-                                    <div class="metric-val" id="statScaledX">+546.4 σ</div>
-                                    <div class="metric-key">Normalized Input</div>
+                                    <div class="metric-val" id="statScaledX">—</div>
+                                    <div class="metric-key">MinMax Scaled Input</div>
                                 </div>
                                 <div class="metric-card border-blue">
-                                    <div class="metric-val text-blue" id="statModelY">3.87e-6 A</div>
-                                    <div class="metric-key" id="lblModelOutput">Model Output (A)</div>
+                                    <div class="metric-val text-blue" id="statModelY">—</div>
+                                    <div class="metric-key" id="lblModelOutput">Model Output (microAmpere)</div>
                                 </div>
                                 <div class="metric-card border-orange">
-                                    <div class="metric-val text-orange" id="statUserY">1.25e-5 A</div>
-                                    <div class="metric-key" id="lblUserOutput">Measured Output (A)</div>
+                                    <div class="metric-val text-orange" id="statUserY">—</div>
+                                    <div class="metric-key" id="lblUserOutput">Measured Output (microAmpere)</div>
                                 </div>
                                 <div class="metric-card">
-                                    <div class="metric-val" id="statPctDiff">+223.0%</div>
+                                    <div class="metric-val" id="statPctDiff">—</div>
                                     <div class="metric-key">Deviation %</div>
                                 </div>
                                 <div class="metric-card">
-                                    <div class="metric-val" id="statRatio">3.23x</div>
+                                    <div class="metric-val" id="statRatio">—</div>
                                     <div class="metric-key">Ratio</div>
                                 </div>
                             </div>
-                        </div>
-                    </div>
 
-                    <!-- AI CHATBOT EXPLAINER -->
-                    <div class="panel chat-panel">
-                        <div class="panel-head">
-                            <h3>AI Diagnostic Chatbot</h3>
-                            <span class="ai-pill">Groq Llama 3.3</span>
-                        </div>
-                        <div class="panel-body chat-scroll" id="chatMessages">
-                            <div class="chat-item bot-item">
-                                <div class="bubble bot-bubble" id="initialBotGreeting">
-                                    <strong>Ready:</strong> Move the test point directly on the graph or adjust values
-                                    to trigger failure physics explanation.
+                            <!-- LIVE AI FAILURE DIAGNOSTIC REPORT (Groq Llama 3.3) -->
+                            <div class="ai-report-box" id="aiReportBox" style="margin-top: 14px;">
+                                <div class="ai-report-header">
+                                    <div class="ai-report-title-wrap">
+                                        <span class="ai-report-icon">🤖</span>
+                                        <span class="ai-report-title">Drishti AI Diagnostic Analysis</span>
+                                    </div>
+                                    <span class="ai-report-badge" id="reportEngineBadge">Groq Llama 3.3</span>
+                                </div>
+                                <div class="ai-report-content" id="aiReportText">
+                                    <!-- Populated dynamically by live LLM API -->
                                 </div>
                             </div>
-                        </div>
-                        <div class="chat-input-row">
-                            <input type="text" id="interactiveChatInput" class="input-chat"
-                                placeholder="Ask a question..." onkeydown="if(event.key==='Enter') sendChatMessage();">
-                            <button class="btn-chat" onclick="sendChatMessage()">Send</button>
                         </div>
                     </div>
 
                 </div>
 
-                <!-- RIGHT COLUMN: DATA DIAGRAMS & VISUALS -->
+                <!-- RIGHT COLUMN: DATA DIAGRAMS & VISUALS (COMPULSORY ON RIGHT) -->
                 <div class="col-right">
 
                     <!-- VISUAL 1: SCATTERPLOT -->
@@ -305,7 +295,7 @@
         </section>
 
         <!-- ============================================================= -->
-        <!-- VIEW 3: ABOUT US PAGE (TEAM DHRISHTI)                         -->
+        <!-- VIEW 3: ABOUT US PAGE (TEAM DRISHTI)                          -->
         <!-- ============================================================= -->
         <section id="view-about" class="view-section">
             <div class="about-wrapper">
@@ -314,7 +304,7 @@
                 <!-- HERO BANNER -->
                 <div class="about-hero-card">
                     <div class="header-badges">
-                        <span class="pill-orange">Team: Dhrishti — Insightful Vision</span>
+                        <span class="pill-orange">Team: Drishti — Insightful Vision</span>
                         <span class="pill-blue">Problem ID: SIH26170</span>
                         <span class="pill-green">Symbiosis Institute of Technology, Pune</span>
                     </div>
@@ -437,10 +427,10 @@
                         </div>
                     </div>
 
-                    <!-- PANEL 4: TEAM DHRISHTI MEMBERS & PRNs -->
+                    <!-- PANEL 4: TEAM DRISHTI MEMBERS & PRNs -->
                     <div class="panel">
                         <div class="panel-head">
-                            <h3>4. Team Dhrishti — Insightful Vision</h3>
+                            <h3>4. Team Drishti — Insightful Vision</h3>
                             <span class="badge-tag">SIT Pune</span>
                         </div>
                         <div class="panel-body">
@@ -449,7 +439,7 @@
                                     <div class="member-avatar">SB</div>
                                     <div class="member-info">
                                         <div class="member-name">Samarth Buchake</div>
-
+                                        <div class="member-role">ML & Fullstack Lead</div>
                                         <div class="member-prn">PRN: 25070126151</div>
                                     </div>
                                 </div>
@@ -457,7 +447,7 @@
                                     <div class="member-avatar">VP</div>
                                     <div class="member-info">
                                         <div class="member-name">Vibhuti Patil</div>
-
+                                        <div class="member-role">Physics of Failure & Models</div>
                                         <div class="member-prn">PRN: 25070126193</div>
                                     </div>
                                 </div>
@@ -465,7 +455,7 @@
                                     <div class="member-avatar">MK</div>
                                     <div class="member-info">
                                         <div class="member-name">Maitreyee Kulkarni</div>
-
+                                        <div class="member-role">Data Preprocessing & Calibration</div>
                                         <div class="member-prn">PRN: 24070123058</div>
                                     </div>
                                 </div>
@@ -473,7 +463,7 @@
                                     <div class="member-avatar">VK</div>
                                     <div class="member-info">
                                         <div class="member-name">Varija Korti</div>
-
+                                        <div class="member-role">Time-Series & Drift Prediction</div>
                                         <div class="member-prn">PRN: 24070123165</div>
                                     </div>
                                 </div>
@@ -481,7 +471,7 @@
                                     <div class="member-avatar">KS</div>
                                     <div class="member-info">
                                         <div class="member-name">Kaushal Sidhpura</div>
-
+                                        <div class="member-role">Dynamic Outlier Detection</div>
                                         <div class="member-prn">PRN: 25070127093</div>
                                     </div>
                                 </div>
@@ -489,7 +479,7 @@
                                     <div class="member-avatar">PH</div>
                                     <div class="member-info">
                                         <div class="member-name">Prachi Hirve</div>
-
+                                        <div class="member-role">Explainability & QA Diagnostics</div>
                                         <div class="member-prn">PRN: 26070126090</div>
                                     </div>
                                 </div>
@@ -503,6 +493,40 @@
         </section>
 
     </main>
+
+    <!-- ============================================================= -->
+    <!-- FLOATING AI ASSISTANT WIDGET (Bottom-Right Corner)            -->
+    <!-- ============================================================= -->
+    <div id="aiFloatingWidget" class="ai-floating-widget">
+        <!-- Collapsible Drawer Panel -->
+        <div id="aiDrawerPanel" class="ai-drawer-panel" style="display: none;">
+            <div class="ai-drawer-header">
+                <div class="ai-drawer-title-wrap">
+                    <span class="ai-drawer-icon">🤖</span>
+                    <div>
+                        <div class="ai-drawer-title">Drishti AI Diagnostics</div>
+                        <div class="ai-drawer-subtitle" id="chatEnginePill">Groq Llama 3.3 Active</div>
+                    </div>
+                </div>
+                <button type="button" class="ai-drawer-close" onclick="toggleAIChat()" title="Minimize Chat">✕</button>
+            </div>
+            <div class="ai-drawer-body chat-scroll" id="chatMessages">
+                <!-- Live Dynamic Messages -->
+            </div>
+            <div class="ai-drawer-footer">
+                <input type="text" id="interactiveChatInput" class="input-chat"
+                    placeholder="Ask Drishti AI about physics..." onkeydown="if(event.key==='Enter') sendChatMessage();">
+                <button class="btn-chat" onclick="sendChatMessage()">Send</button>
+            </div>
+        </div>
+
+        <!-- Floating Action Button (FAB) -->
+        <button id="aiFabBtn" class="ai-fab-btn" onclick="toggleAIChat()" aria-label="Toggle Drishti AI Diagnostics">
+            <span class="ai-fab-icon">🤖</span>
+            <span class="ai-fab-label">AI Diagnostics</span>
+            <span class="ai-fab-badge" id="aiUnreadBadge" style="display: none;">1</span>
+        </button>
+    </div>
 
     <!-- Footer (< 11px, right-aligned) -->
     <footer class="site-footer">

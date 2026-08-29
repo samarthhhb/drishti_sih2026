@@ -40,7 +40,7 @@ def set_api_key(provider: str, api_key: str):
         api_key: The API Key string (optional if using offline/ollama)
     """
     _default_bot.set_api_key(provider, api_key)
-    print(f"✅ Configured AI Engine: {provider.upper()}")
+    print(f" Configured AI Engine: {provider.upper()}")
 
 
 def explain_discrepancy(

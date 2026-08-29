@@ -32,12 +32,12 @@ class ScreeningDatabase:
         return conn
 
     def _ensure_db(self):
-        """Create database directory and tables if they do not exist."""
+        """Create database directory and tables if they do not exist, and auto-migrate."""
         self.db_path.parent.mkdir(parents=True, exist_ok=True)
         with self._get_connection() as conn:
             cursor = conn.cursor()
             
-            # Table 1: Screenings and Discrepancy Records
+            # Table 1: Screenings and Discrepancy Records (MinMaxScaler & Physical)
             cursor.execute("""
                 CREATE TABLE IF NOT EXISTS screenings (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -45,8 +45,8 @@ class ScreeningDatabase:
                     component_id TEXT NOT NULL,
                     model_type TEXT NOT NULL,
                     raw_input REAL NOT NULL,
-                    scaled_input REAL NOT NULL,
-                    scaled_output REAL NOT NULL,
+                    scaled_input REAL,
+                    scaled_output REAL,
                     physical_output REAL NOT NULL,
                     user_said_output REAL,
                     delta REAL,
@@ -61,6 +61,20 @@ class ScreeningDatabase:
                     ai_provider TEXT
                 )
             """)
+
+            # Auto-migrate: ensure scaled_input and scaled_output exist
+            cursor.execute("PRAGMA table_info(screenings)")
+            cols = {row["name"] for row in cursor.fetchall()}
+            if "scaled_input" not in cols:
+                try:
+                    cursor.execute("ALTER TABLE screenings ADD COLUMN scaled_input REAL DEFAULT 0.0")
+                except Exception:
+                    pass
+            if "scaled_output" not in cols:
+                try:
+                    cursor.execute("ALTER TABLE screenings ADD COLUMN scaled_output REAL DEFAULT 0.0")
+                except Exception:
+                    pass
 
             # Table 2: Conversational Chat Logs
             cursor.execute("""
@@ -79,8 +93,8 @@ class ScreeningDatabase:
 
     def save_screening(self, data: Dict[str, Any]) -> int:
         """
-        Insert a complete screening transaction into the database.
-        Returns the inserted row ID.
+        Insert a complete screening transaction into the database dynamically,
+        persisting both physical values and MinMaxScaler [0, 1] values.
         """
         now = datetime.now().isoformat()
         causes_json = json.dumps(data.get("physics_causes", []))
@@ -88,33 +102,39 @@ class ScreeningDatabase:
 
         with self._get_connection() as conn:
             cursor = conn.cursor()
-            cursor.execute("""
-                INSERT INTO screenings (
-                    timestamp, component_id, model_type, raw_input, scaled_input,
-                    scaled_output, physical_output, user_said_output, delta, pct_diff,
-                    ratio, direction, risk_decision, severity, physics_causes,
-                    recommendations, chatbot_explanation, ai_provider
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-            """, (
-                data.get("timestamp", now),
-                data.get("component_id", "DUT-01"),
-                data.get("model_type", "breakdown"),
-                float(data.get("raw_input", 0.0)),
-                float(data.get("scaled_input", 0.0)),
-                float(data.get("scaled_output", 0.0)),
-                float(data.get("physical_output", 0.0)),
-                float(data["user_said_output"]) if data.get("user_said_output") is not None else None,
-                float(data["delta"]) if data.get("delta") is not None else None,
-                float(data["pct_diff"]) if data.get("pct_diff") is not None else None,
-                float(data["ratio"]) if data.get("ratio") is not None else None,
-                data.get("direction", "NOMINAL"),
-                data.get("risk_decision", "PASS"),
-                data.get("severity", "LOW"),
-                causes_json,
-                recs_json,
-                data.get("chatbot_explanation", ""),
-                data.get("ai_provider", "offline")
-            ))
+            
+            # Dynamically fetch existing table columns to avoid any schema mismatch
+            cursor.execute("PRAGMA table_info(screenings)")
+            cols_info = cursor.fetchall()
+            existing_cols = {row["name"] for row in cols_info}
+
+            insert_dict = {
+                "timestamp": data.get("timestamp", now),
+                "component_id": data.get("component_id", "DUT-01"),
+                "model_type": data.get("model_type", "breakdown"),
+                "raw_input": float(data.get("raw_input", 0.0)),
+                "scaled_input": float(data.get("scaled_input", 0.0)),
+                "scaled_output": float(data.get("scaled_output", 0.0)),
+                "physical_output": float(data.get("physical_output", 0.0)),
+                "user_said_output": float(data["user_said_output"]) if data.get("user_said_output") is not None else None,
+                "delta": float(data["delta"]) if data.get("delta") is not None else None,
+                "pct_diff": float(data["pct_diff"]) if data.get("pct_diff") is not None else None,
+                "ratio": float(data["ratio"]) if data.get("ratio") is not None else None,
+                "direction": data.get("direction", "NOMINAL"),
+                "risk_decision": data.get("risk_decision", "PASS"),
+                "severity": data.get("severity", "LOW"),
+                "physics_causes": causes_json,
+                "recommendations": recs_json,
+                "chatbot_explanation": data.get("chatbot_explanation", ""),
+                "ai_provider": data.get("ai_provider", "offline")
+            }
+
+            valid_keys = [k for k in insert_dict.keys() if k in existing_cols]
+            col_names = ", ".join(valid_keys)
+            placeholders = ", ".join(["?"] * len(valid_keys))
+            values = [insert_dict[k] for k in valid_keys]
+
+            cursor.execute(f"INSERT INTO screenings ({col_names}) VALUES ({placeholders})", values)
             conn.commit()
             return cursor.lastrowid
 
@@ -169,9 +189,12 @@ class ScreeningDatabase:
             d = dict(row)
             try:
                 d["physics_causes"] = json.loads(d.get("physics_causes") or "[]")
+            except json.JSONDecodeError:
+                d["physics_causes"] = []
+            try:
                 d["recommendations"] = json.loads(d.get("recommendations") or "[]")
-            except:
-                pass
+            except json.JSONDecodeError:
+                d["recommendations"] = []
             return d
 
     def save_chat_message(
@@ -181,7 +204,7 @@ class ScreeningDatabase:
         message: str,
         screening_id: Optional[int] = None
     ) -> int:
-        """Save chat conversation message to database."""
+        """Insert chat conversation turn."""
         now = datetime.now().isoformat()
         with self._get_connection() as conn:
             cursor = conn.cursor()
@@ -192,29 +215,39 @@ class ScreeningDatabase:
             conn.commit()
             return cursor.lastrowid
 
-    def get_chat_history(self, session_id: str, limit: int = 20) -> List[Dict[str, Any]]:
-        """Retrieve recent chat history for a session."""
+    def get_chat_history(self, session_id: str, limit: int = 50) -> List[Dict[str, Any]]:
+        """Retrieve chat conversation history for a session."""
         with self._get_connection() as conn:
             cursor = conn.cursor()
             cursor.execute("""
-                SELECT * FROM chat_logs WHERE session_id = ?
-                ORDER BY id ASC LIMIT ?
+                SELECT * FROM chat_logs WHERE session_id = ? ORDER BY id ASC LIMIT ?
             """, (session_id, limit))
-            return [dict(r) for r in cursor.fetchall()]
+            rows = cursor.fetchall()
+            return [dict(r) for r in rows]
 
     def get_summary_stats(self) -> Dict[str, Any]:
-        """Compute aggregate statistics on stored screenings."""
+        """Compute summary counts and statistics across all stored screenings."""
         with self._get_connection() as conn:
             cursor = conn.cursor()
-            cursor.execute("SELECT COUNT(*) FROM screenings")
-            total = cursor.fetchone()[0]
+            cursor.execute("SELECT COUNT(*) as total FROM screenings")
+            total = cursor.fetchone()["total"]
 
-            cursor.execute("SELECT risk_decision, COUNT(*) FROM screenings GROUP BY risk_decision")
-            decisions = {r[0]: r[1] for r in cursor.fetchall()}
+            cursor.execute("""
+                SELECT risk_decision, COUNT(*) as count 
+                FROM screenings 
+                GROUP BY risk_decision
+            """)
+            decisions = {r["risk_decision"]: r["count"] for r in cursor.fetchall()}
+
+            cursor.execute("""
+                SELECT model_type, COUNT(*) as count 
+                FROM screenings 
+                GROUP BY model_type
+            """)
+            by_model = {r["model_type"]: r["count"] for r in cursor.fetchall()}
 
             return {
                 "total_screenings": total,
-                "pass_count": decisions.get("PASS", 0),
-                "hold_count": decisions.get("HOLD", 0),
-                "reject_count": decisions.get("REJECT", 0)
+                "by_decision": decisions,
+                "by_model": by_model
             }
