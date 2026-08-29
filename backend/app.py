@@ -75,7 +75,9 @@ def sample_dataset(model_type: str, max_points: int = 150):
                     y_raw = float(row[y_col])
                     # If in Amperes (< 0.1), scale to microAmpere (uA)
                     y_micro = y_raw * 1e6 if y_raw < 0.1 else y_raw
+                    t_val = float(row.get("time_minutes", 0.0))
                     points.append({
+                        "t": t_val,
                         "x": float(row[x_col]),
                         "y": y_micro
                     })
@@ -142,6 +144,13 @@ class BackendAPIHandler(BaseHTTPRequestHandler):
         elif path == "/api/models":
             self._set_headers(200)
             self.wfile.write(json.dumps(MINMAX_BOUNDS).encode("utf-8"))
+
+        elif path == "/api/timeseries-data":
+            model_type = query.get("model", ["breakdown"])[0]
+            limit = int(query.get("limit", [120])[0])
+            ts_data = pipeline_instance.model_engine.get_timeseries_data(model_type, max_points=limit)
+            self._set_headers(200)
+            self.wfile.write(json.dumps(ts_data).encode("utf-8"))
 
         elif path == "/api/dataset-sample":
             model_type = query.get("model", ["breakdown"])[0]
@@ -215,12 +224,15 @@ class BackendAPIHandler(BaseHTTPRequestHandler):
             component_id = data.get("component_id", "DUT-01")
             use_ai = data.get("use_ai", True)
 
+            time_minutes = float(data["time_minutes"]) if "time_minutes" in data and data["time_minutes"] is not None else None
+
             try:
                 result = pipeline_instance.process_screening(
                     model_type=model_type,
                     raw_input=raw_input,
                     user_said_output=user_said_output,
                     component_id=component_id,
+                    time_minutes=time_minutes,
                     use_ai=use_ai
                 )
                 self._set_headers(200)

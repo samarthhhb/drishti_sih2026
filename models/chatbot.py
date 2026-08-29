@@ -83,12 +83,12 @@ MODEL_DEFINITIONS = {
     }
 }
 
-SYSTEM_PROMPT = """You are 'Drishti AI' for Project SIH26170 (Semiconductor Stress Screening).
+SYSTEM_PROMPT = """You are 'Drishti AI' for Project SIH26170 (IGBT Time-Series Degradation & Stress Screening).
 IMPORTANT INSTRUCTION: Always provide CONCISE, DIRECT, and HIGH-IMPACT answers. Avoid conversational filler or long preambles.
 For discrepancy explanations, format in 3 crisp bullet points:
-1. **Discrepancy**: Exact drift magnitude (% and ratio).
-2. **Physics Cause**: Key semiconductor mechanism (e.g. Avalanche, SRH, oxide charge trapping ΔVth, solder fatigue).
-3. **Screening Verdict**: PASS / HOLD / REJECT with immediate next validation step.
+1. **Time-Series Discrepancy**: Exact prediction residual (e = Actual - Predicted in microAmpere), drift magnitude (%), and ratio.
+2. **Degradation Physics Cause**: Key semiconductor mechanism (e.g. Impact Ionization Avalanche, SRH Deep-Level Recombination, Gate Oxide Charge Trapping ΔVth, Solder Fatigue).
+3. **Screening & Maintenance Verdict**: PASS / HOLD / REJECT with early warning action and immediate next validation step.
 """
 
 
@@ -391,17 +391,22 @@ class FreeAPIClient:
             # Check if any env var is set
             self._detect_provider()
 
-        if self.provider == "gemini":
-            return self._call_gemini(prompt, system_instruction)
-        elif self.provider == "groq":
-            return self._call_groq(prompt, system_instruction)
-        elif self.provider == "openrouter":
-            return self._call_openrouter(prompt, system_instruction)
-        elif self.provider == "huggingface":
-            return self._call_huggingface(prompt, system_instruction)
-        elif self.provider == "ollama":
-            return self._call_ollama(prompt, system_instruction)
-        else:
+        try:
+            if self.provider == "gemini":
+                return self._call_gemini(prompt, system_instruction)
+            elif self.provider == "groq":
+                return self._call_groq(prompt, system_instruction)
+            elif self.provider == "openrouter":
+                return self._call_openrouter(prompt, system_instruction)
+            elif self.provider == "huggingface":
+                return self._call_huggingface(prompt, system_instruction)
+            elif self.provider == "ollama":
+                return self._call_ollama(prompt, system_instruction)
+            else:
+                return self._call_offline(prompt)
+        except Exception as e:
+            # Automatic graceful fallback if online API fails (403, 401, 429, timeout)
+            print(f"[FreeAPIClient] {self.provider.upper()} API call failed ({e}). Falling back to built-in physics engine.")
             return self._call_offline(prompt)
 
     def _call_gemini(self, prompt: str, system_instruction: str) -> str:
@@ -449,29 +454,42 @@ class FreeAPIClient:
         if not self.api_key:
             raise ValueError("GROQ_API_KEY is not set.")
         url = "https://api.groq.com/openai/v1/chat/completions"
-        payload = {
-            "model": "llama-3.3-70b-versatile",
-            "messages": [
-                {"role": "system", "content": system_instruction},
-                {"role": "user", "content": prompt}
-            ],
-            "temperature": 0.2,
-            "max_tokens": 2048
-        }
-        req = urllib.request.Request(
-            url,
-            data=json.dumps(payload).encode("utf-8"),
-            headers={
-                "Content-Type": "application/json",
-                "Authorization": f"Bearer {self.api_key}"
+        candidate_models = [
+            "groq/compound-mini",
+            "groq/compound",
+            "qwen/qwen3.8-27b",
+            "openai/gpt-oss-120b",
+            "llama-3.3-70b-versatile",
+            "llama-3.1-8b-instant"
+        ]
+        last_err = None
+        for model in candidate_models:
+            payload = {
+                "model": model,
+                "messages": [
+                    {"role": "system", "content": system_instruction},
+                    {"role": "user", "content": prompt}
+                ],
+                "temperature": 0.2,
+                "max_tokens": 1024
             }
-        )
-        try:
-            with urllib.request.urlopen(req, timeout=20) as response:
-                res_data = json.loads(response.read().decode("utf-8"))
-                return res_data["choices"][0]["message"]["content"]
-        except Exception as e:
-            raise RuntimeError(f"Groq API error: {e}")
+            req = urllib.request.Request(
+                url,
+                data=json.dumps(payload).encode("utf-8"),
+                headers={
+                    "Content-Type": "application/json",
+                    "Authorization": f"Bearer {self.api_key}",
+                    "User-Agent": "Mozilla/5.0"
+                }
+            )
+            try:
+                with urllib.request.urlopen(req, timeout=15) as response:
+                    res_data = json.loads(response.read().decode("utf-8"))
+                    return res_data["choices"][0]["message"]["content"]
+            except Exception as e:
+                last_err = e
+                continue
+        raise RuntimeError(f"Groq API error: {last_err}")
 
     def _call_openrouter(self, prompt: str, system_instruction: str) -> str:
         """Call OpenRouter Free Models API."""
@@ -612,14 +630,16 @@ Provide a CONCISE 3-point response:
 3. **Screening Action**: Decision ({diag['risk_decision']}) and next test step.
 Keep it strictly under 100 words.
 """
-                ai_explanation = self.api_client.generate(ai_prompt)
-            except Exception as e:
-                ai_explanation = None  # Seamless fallback to built-in report
+                raw_ai = self.api_client.generate(ai_prompt)
+                if raw_ai and "Offline Mode" not in raw_ai:
+                    ai_explanation = raw_ai
+            except Exception:
+                ai_explanation = None
 
         diag["component_id"] = component_id
         diag["expert_report"] = report_md
         diag["ai_explanation"] = ai_explanation
-        diag["final_explanation"] = ai_explanation if (ai_explanation and not ai_explanation.startswith("[Note:")) else report_md
+        diag["final_explanation"] = ai_explanation if (ai_explanation and len(ai_explanation.strip()) > 20) else report_md
 
         return diag
 
@@ -643,14 +663,14 @@ Keep it strictly under 100 words.
         
         if self.api_client.provider != "offline":
             try:
-                # Build context from history
                 conv_history = "\n".join([f"{h['role'].upper()}: {h['content']}" for h in self.history[-6:]])
                 prompt = f"""Conversation History:\n{conv_history}\n\nPlease answer the user's latest query accurately using semiconductor physics and SIH-26 context."""
-                reply = self.api_client.generate(prompt)
-                self.history.append({"role": "assistant", "content": reply})
-                return reply
-            except Exception as e:
-                pass  # Fall back to rule-based conversation helper
+                raw_reply = self.api_client.generate(prompt)
+                if raw_reply and "Offline Mode" not in raw_reply and len(raw_reply.strip()) > 10:
+                    self.history.append({"role": "assistant", "content": raw_reply})
+                    return raw_reply
+            except Exception:
+                pass
 
         # Offline fallback response generator
         reply = self._generate_offline_chat_response(user_message)

@@ -1,43 +1,39 @@
-# SIH26170 - REST API & Architecture Documentation
-### Semiconductor Stress Screening, ML Inference & AI Explainability Engine
-**Project**: SIH26170 • Team SIT Pune (Smart India Hackathon 2026)
+# SIH26170 - REST API and Architecture Reference
+### Semiconductor Stress Screening, Time-Series Inference, and AI Explainability Engine
+**Project: SIH26170 • Team Drishti • Symbiosis Institute of Technology, Pune • Smart India Hackathon 2024**
 
 ---
 
 ## Table of Contents
-1. [Overview & Architecture](#1-overview--architecture)
-2. [Base URL & Authentication](#2-base-url--authentication)
+1. [Architecture Overview](#1-architecture-overview)
+2. [Base URL and Protocol](#2-base-url-and-protocol)
 3. [REST API Endpoints](#3-rest-api-endpoints)
- - [GET /api/health](#get-apihealth)
- - [GET /api/models](#get-apimodels)
- - [GET /api/dataset-sample](#get-apidataset-sample)
- - [POST /api/pipeline/run](#post-apipipelinerun)
- - [POST /api/chat](#post-apichat)
- - [GET /api/screenings](#get-apiscreenings)
- - [GET /api/screenings/<id>](#get-apiscreeningsid)
-4. [Auto-Scaling & Normalization Engine](#4-auto-scaling--normalization-engine)
-5. [AI Explainability & LLM Integration (Groq Llama 3.3)](#5-ai-explainability--llm-integration-groq-llama-33)
-6. [Python Programmatic API Reference](#6-python-programmatic-api-reference)
-7. [Error Handling & High-Availability Fallback](#7-error-handling--high-availability-fallback)
+   - [GET /api/health](#get-apihealth)
+   - [GET /api/models](#get-apimodels)
+   - [GET /api/timeseries-data](#get-apitimeseries-data)
+   - [GET /api/dataset-sample](#get-apidataset-sample)
+   - [POST /api/pipeline/run](#post-apipipelinerun)
+   - [POST /api/chat](#post-apichat)
+   - [GET /api/screenings](#get-apiscreenings)
+   - [GET /api/screenings/{id}](#get-apiscreeningsid)
+4. [Feature Standardization and Scaling](#4-feature-standardization-and-scaling)
+5. [AI Explainability Engine](#5-ai-explainability-engine)
+6. [Python Programmatic Usage](#6-python-programmatic-usage)
+7. [Resilience and Fallback Modes](#7-resilience-and-fallback-modes)
 
 ---
 
-## 1. Overview & Architecture
+## 1. Architecture Overview
 
-The SIH26170 Backend API serves as the orchestration layer between:
-- **Client Frontend Dashboard** (`frontend/`)
-- **IGBT Time-Series Degradation & Breakdown Predictor** (`ts_fixed_timeseries.ipynb` / `models/`)
-- **MinMaxScaler Normalization Engine** (`backend/scaler.py`)
-- **Groq Llama 3.3 AI Explainability Service** (`models/chatbot.py`)
-- **SQLite Screening History Database** (`backend/data/screening.db`)
+The backend API coordinates communication between the browser dashboard, time-series machine learning models, statistical scaling layers, the Groq Llama 3.3 explanation service, and persistent database storage:
 
 ```
-  CLIENT (Frontend / CLI / Notebooks)
+  CLIENT (Web Browser, CLI, or Automated Test Bench)
   │
   ▼
   ┌────────────────────────────────────────────────────────┐
   │         HTTP REST Server (backend/app.py)              │
-  │           Port 5000 • Python Standard Lib              │
+  │         Port 5000 • Python Standard Library            │
   └───────────────────────────┬────────────────────────────┘
                               │
                               ▼
@@ -55,26 +51,26 @@ The SIH26170 Backend API serves as the orchestration layer between:
                                                         │
                                                         ▼
                                           ┌───────────────────────────┐
-                                          │      SQLite Database      │
+                                          │  SQLite Audit Database    │
                                           │    (data/screening.db)    │
                                           └───────────────────────────┘
 ```
 
 ---
 
-## 2. Base URL & Authentication
+## 2. Base URL and Protocol
 
-- **Base URL**: `http://localhost:5000` (or configured host/port)
-- **Content-Type**: `application/json`
+- **Base URL**: `http://localhost:5000`
+- **Default Content Type**: `application/json`
 - **Authentication**: None required for local screening endpoints.
-- **AI Keys**: Groq (`GROQ_API_KEY`) and Gemini (`GEMINI_API_KEY`) keys are loaded automatically from `.env` on startup.
+- **Environment Keys**: `GROQ_API_KEY` is loaded from `.env` on startup. If unavailable, the engine falls back to deterministic physics explanations automatically.
 
 ---
 
 ## 3. REST API Endpoints
 
 ### `GET /api/health`
-Checks server status, database connection, and AI LLM engine status.
+Returns system status, active database path, and language model provider configuration.
 
 **Example Request:**
 ```bash
@@ -84,20 +80,20 @@ curl -X GET http://localhost:5000/api/health
 **Example Response:**
 ```json
 {
- "status": "healthy",
- "service": "SIH26170 Semiconductor Screening API",
- "version": "1.0.0",
- "ai_provider": "groq",
- "ai_model": "llama-3.3-70b-versatile",
- "groq_key_detected": true,
- "database": "backend/data/screening.db"
+  "status": "healthy",
+  "service": "SIH26170 Semiconductor Screening API",
+  "version": "1.0.0",
+  "ai_provider": "groq",
+  "ai_model": "llama-3.3-70b-versatile",
+  "groq_key_detected": true,
+  "database": "backend/data/screening.db"
 }
 ```
 
 ---
 
 ### `GET /api/models`
-Returns metadata, physics definitions, input/output parameters, and operating ranges for all supported models.
+Returns metadata, physics definitions, input and output units, and operating bounds for supported semiconductor models.
 
 **Example Request:**
 ```bash
@@ -107,264 +103,275 @@ curl -X GET http://localhost:5000/api/models
 **Example Response:**
 ```json
 {
- "models": {
- "breakdown": {
- "name": "Breakdown Model",
- "input_param": "Collector-Emitter Voltage",
- "input_unit": "V",
- "output_param": "Leakage Current",
- "output_unit": "A",
- "typical_input_range": [0.0, 650.0],
- "typical_output_range": [1e-9, 0.0001],
- "description": "Models collector-emitter leakage current across applied collector-emitter voltage."
- },
- "leakage": {
- "name": "Leakage IV Model",
- "input_param": "Applied Voltage",
- "input_unit": "V",
- "output_param": "Leakage Current",
- "output_unit": "A",
- "typical_input_range": [0.0, 50.0],
- "typical_output_range": [1e-9, 1e-05],
- "description": "Models reverse leakage current as a function of applied bias voltage."
- },
- "turnon": {
- "name": "Turn-On Model",
- "input_param": "Gate Voltage",
- "input_unit": "V",
- "output_param": "Collector Current",
- "output_unit": "A",
- "typical_input_range": [0.0, 15.0],
- "typical_output_range": [0.0, 30.0],
- "description": "Models IGBT transfer characteristics (Gate Voltage vs Collector Current)."
- }
- }
+  "models": {
+    "breakdown": {
+      "name": "Time-Series & Breakdown Model",
+      "input_param": "Collector-Emitter Voltage",
+      "input_unit": "V",
+      "output_param": "Leakage Current",
+      "output_unit": "microAmpere",
+      "typical_input_range": [0.0, 650.0],
+      "typical_output_range": [0.01, 150.0],
+      "description": "Models chronological collector-emitter degradation and high-voltage breakdown."
+    },
+    "leakage": {
+      "name": "Applied Voltage vs Leakage IV",
+      "input_param": "Applied Stress Voltage",
+      "input_unit": "V",
+      "output_param": "Reverse Leakage Current",
+      "output_unit": "microAmpere",
+      "typical_input_range": [0.0, 600.0],
+      "typical_output_range": [0.01, 120.0],
+      "description": "Evaluates reverse junction leakage current and thermal carrier generation."
+    },
+    "turnon": {
+      "name": "Gate Voltage vs Collector Current",
+      "input_param": "Gate-Emitter Voltage",
+      "input_unit": "V",
+      "output_param": "Collector Current",
+      "output_unit": "microAmpere",
+      "typical_input_range": [0.0, 15.0],
+      "typical_output_range": [0.01, 100.0],
+      "description": "Analyzes channel conduction threshold shifts and gate dielectric integrity."
+    }
+  }
+}
+```
+
+---
+
+### `GET /api/timeseries-data`
+Returns sequential chronological points formatted for chart rendering, including historical training data, future ground truth, model forecast, and voltage trajectories.
+
+**Query Parameters:**
+- `model` (optional, default=`breakdown`): `breakdown`, `leakage`, or `turnon`.
+- `limit` (optional, default=120): Number of time points to return.
+
+**Example Request:**
+```bash
+curl -X GET "http://localhost:5000/api/timeseries-data?model=breakdown&limit=5"
+```
+
+**Example Response:**
+```json
+{
+  "model_type": "breakdown",
+  "total_points": 5,
+  "voltage_points": [
+    { "x": 0.0, "y": 550.0 },
+    { "x": 30.0, "y": 550.0 }
+  ],
+  "train_points": [
+    { "x": 0.0, "y": 0.01 },
+    { "x": 30.0, "y": 0.012 }
+  ],
+  "test_actual_points": [
+    { "x": 90960.0, "y": 14.2 },
+    { "x": 90990.0, "y": 14.5 }
+  ],
+  "test_predicted_points": [
+    { "x": 90960.0, "y": 13.9 },
+    { "x": 90990.0, "y": 14.1 }
+  ],
+  "metrics": {
+    "train_rows": 3032,
+    "test_rows": 758,
+    "r2_score": 0.989,
+    "mae_microampere": 1.87
+  }
 }
 ```
 
 ---
 
 ### `GET /api/dataset-sample`
-Returns sampled $(X, Y)$ coordinate points from the underlying NASA laboratory CSV datasets (`final_data/dataset/*.csv`) for rendering scatterplots.
+Returns sampled experimental laboratory points from the characterization CSV dataset for rendering scatterplots.
 
 **Query Parameters:**
-- `model` *(required)*: `breakdown`, `leakage`, or `turnon`.
-- `limit` *(optional, default=100)*: Number of points to sample (max=500).
+- `model` (optional, default=`breakdown`): `breakdown`, `leakage`, or `turnon`.
+- `limit` (optional, default=100): Number of points to sample.
 
 **Example Request:**
 ```bash
-curl -X GET "http://localhost:5000/api/dataset-sample?model=breakdown&limit=5"
+curl -X GET "http://localhost:5000/api/dataset-sample?model=breakdown&limit=3"
 ```
 
 **Example Response:**
 ```json
 {
- "model_type": "breakdown",
- "count": 5,
- "points": [
- { "x": 2.020181, "y": 5.885971e-09 },
- { "x": 10.052814, "y": 7.420194e-09 },
- { "x": 50.192847, "y": 1.250194e-08 },
- { "x": 300.49102, "y": 3.850194e-08 },
- { "x": 550.18274, "y": 3.871029e-06 }
- ]
+  "model_type": "breakdown",
+  "count": 3,
+  "points": [
+    { "x": 10.0, "y": 0.01 },
+    { "x": 300.0, "y": 0.08 },
+    { "x": 550.0, "y": 12.5 }
+  ]
 }
 ```
 
 ---
 
 ### `POST /api/pipeline/run`
-**The Master Screening Endpoint**. Takes an unscaled, raw physical measurement, automatically standardizes the feature, performs ML regression inference, inverse-transforms the output to physical units, computes mathematical discrepancy metrics ($\Delta, \%\Delta, \text{ratio}$), generates a 3-point Groq AI failure explanation, and persists the record to SQLite.
+**Primary Screening Execution Endpoint**. Receives test bench inputs, standardizes features, executes regression forecasting, calculates mathematical discrepancies, produces AI failure physics explanations, and stores the audit record.
 
 **Request Body:**
 | Field | Type | Required | Description |
 | :--- | :--- | :--- | :--- |
 | `model_type` | string | Yes | `breakdown`, `leakage`, or `turnon` |
-| `raw_input` | float | Yes | Raw, unscaled test voltage (e.g. `550.0` V) |
-| `user_said_output` | float | No | Observed measured current from test bench (e.g. `1.25e-5` A) |
-| `component_id` | string | No | Serial/batch ID (default: `"DUT-01"`) |
-| `use_ai` | bool | No | Enable LLM generative explainability (default: `true`) |
+| `raw_input` | float | Yes | Applied voltage (in Volts) |
+| `time_minutes` | float | No | Elapsed burn-in time (default: `90960.0`) |
+| `user_said_output` | float | No | Measured current from test bench (in microAmpere) |
+| `use_ai` | boolean | No | Enable generative failure explanation (default: `true`) |
 
 **Example Request:**
 ```bash
 curl -X POST http://localhost:5000/api/pipeline/run \
- -H "Content-Type: application/json" \
- -d '{
- "model_type": "breakdown",
- "raw_input": 550.0,
- "user_said_output": 1.25e-5,
- "component_id": "NASA-IGBT-Part-12",
- "use_ai": true
- }'
+  -H "Content-Type: application/json" \
+  -d '{
+    "model_type": "breakdown",
+    "raw_input": 550.0,
+    "time_minutes": 90960.0,
+    "user_said_output": 12.50,
+    "use_ai": true
+  }'
 ```
 
 **Example Response:**
 ```json
 {
- "screening_id": 1,
- "component_id": "NASA-IGBT-Part-12",
- "model_type": "breakdown",
- "model_name": "Breakdown Model",
- "raw_input": 550.0,
- "input_unit": "V",
- "scaled_input": 546.447,
- "scaled_output": 403.886,
- "physical_output": 0.04341,
- "output_unit": "A",
- "user_said_output": 1.25e-5,
- "discrepancy": {
- "delta": -0.04339,
- "pct_diff": -99.97,
- "ratio": 0.00028,
- "direction": "LOWER",
- "risk_decision": "HOLD",
- "severity": "MODERATE",
- "physics_causes": [
- "Model over-estimation at sub-breakdown voltage or superior die quality with lower defect density.",
- "Incomplete contact formation during burn-in test probing."
- ],
- "recommendations": [
- "Verify instrument sensitivity threshold (femto-ammeter vs standard SMU).",
- "Re-screen at elevated junction temperature (125°C) to accelerate thermal carrier generation."
- ]
- },
- "chatbot_explanation": "**Screening Verdict: HOLD** (`NASA-IGBT-Part-12` • Breakdown Model)\n\n1. **Deviation**: `-99.97%` drift (0.00x baseline). Observed output is LOWER than model prediction.\n2. **Physics Cause**: Model over-estimation at sub-breakdown voltage or superior die quality.\n3. **Next Action**: Verify instrument sensitivity threshold and re-screen at 125°C.",
- "timestamp": "2026-08-29T13:45:00.000000"
+  "screening_id": 1,
+  "model_type": "breakdown",
+  "model_name": "Time-Series & Breakdown Model",
+  "raw_input": 550.0,
+  "input_unit": "V",
+  "time_minutes": 90960.0,
+  "scaled_input": 0.846,
+  "physical_output": 0.01,
+  "output_unit": "microAmpere",
+  "user_said_output": 12.50,
+  "discrepancy": {
+    "delta": 12.49,
+    "pct_diff": 99.92,
+    "ratio": 1250.0,
+    "direction": "HIGHER",
+    "risk_decision": "PASS",
+    "severity": "NORMAL"
+  },
+  "chatbot_explanation": "Screening Verdict: PASS\n\n1. Deviation: Measured current matches normal operating envelope within calibrated limits.\n2. Physics Cause: Standard thermal generation with negligible dielectric degradation.\n3. Next Action: Proceed to subsequent screening stage.",
+  "timestamp": "2026-08-30T03:00:00.000000"
 }
 ```
 
 ---
 
 ### `POST /api/chat`
-Conversational endpoint for asking semiconductor physics, ML model dynamics, or screening criteria questions.
+Interactive conversational endpoint for asking physics, degradation mechanism, or screening criteria questions.
 
 **Request Body:**
 ```json
 {
- "message": "Why does leakage current increase exponentially near breakdown voltage?"
+  "message": "Why does leakage current increase under high temperature burn-in?"
 }
 ```
 
 **Example Request:**
 ```bash
 curl -X POST http://localhost:5000/api/chat \
- -H "Content-Type: application/json" \
- -d '{"message": "Why does leakage current increase exponentially near breakdown voltage?"}'
+  -H "Content-Type: application/json" \
+  -d '{"message": "Why does leakage current increase under high temperature burn-in?"}'
 ```
 
 **Example Response:**
 ```json
 {
- "query": "Why does leakage current increase exponentially near breakdown voltage?",
- "reply": "Near breakdown voltage ($V_{BR}$), the internal electric field in the space-charge region exceeds the critical field ($E > E_{crit}$). Carriers acquire sufficient kinetic energy to knock valence electrons into the conduction band via impact ionization, creating an exponential avalanche multiplication of electron-hole pairs.",
- "provider": "groq",
- "model": "llama-3.3-70b-versatile"
+  "query": "Why does leakage current increase under high temperature burn-in?",
+  "reply": "Elevated thermal stress at 125°C increases intrinsic carrier concentration exponentially via thermal generation. Trapped charges in gate and field oxides become active, creating additional conduction paths that accelerate leakage drift.",
+  "provider": "groq",
+  "model": "llama-3.3-70b-versatile"
 }
 ```
 
 ---
 
 ### `GET /api/screenings`
-Retrieves past component screening transactions from the SQLite database.
+Retrieves past screening transactions from the persistent audit database.
 
 **Query Parameters:**
-- `limit` *(optional, default=50)*: Number of past records to return.
-- `model` *(optional)*: Filter by `breakdown`, `leakage`, or `turnon`.
+- `limit` (optional, default=50): Maximum number of records to return.
+- `model` (optional): Filter by `breakdown`, `leakage`, or `turnon`.
 
 **Example Response:**
 ```json
 {
- "total": 12,
- "screenings": [
- {
- "id": 1,
- "component_id": "NASA-IGBT-Part-12",
- "model_type": "breakdown",
- "raw_input": 550.0,
- "scaled_input": 546.447,
- "physical_output": 0.04341,
- "user_said_output": 1.25e-5,
- "pct_diff": -99.97,
- "risk_decision": "HOLD",
- "timestamp": "2026-08-29 13:45:00"
- }
- ]
+  "total": 1,
+  "screenings": [
+    {
+      "id": 1,
+      "model_type": "breakdown",
+      "raw_input": 550.0,
+      "time_minutes": 90960.0,
+      "physical_output": 0.01,
+      "user_said_output": 12.50,
+      "pct_diff": 99.92,
+      "risk_decision": "PASS",
+      "timestamp": "2026-08-30 03:00:00"
+    }
+  ]
 }
 ```
 
 ---
 
-## 4. Auto-Scaling & Normalization Engine
+## 4. Feature Standardization and Scaling
 
-User inputs from physical laboratory instruments are provided in raw physical units (e.g. `550.0 V`). The backend handles scaling transparently:
+Input voltages and times are normalized internally into the `[0, 1]` interval using calibrated statistics:
 
-### Formulas:
-$$\text{Feature Standardization: } X_{\text{scaled}} = \frac{X_{\text{raw}} - \mu_x}{\sigma_x}$$
-$$\text{Scaled Forward Model: } Y_{\text{scaled}} = w \cdot X_{\text{scaled}} + b$$
-$$\text{Target Inverse Scaling: } Y_{\text{phys}} = Y_{\text{scaled}} \cdot \sigma_y + \mu_y$$
+$$\text{Normalized Feature: } X_{\text{norm}} = \frac{X_{\text{raw}} - X_{\min}}{X_{\max} - X_{\min}}$$
 
-### Calibrated Calibration Parameters (NASA Dataset):
-| Model | Mean $X$ ($\mu_x$) | Std $X$ ($\sigma_x$) | Mean $Y$ ($\mu_y$) | Std $Y$ ($\sigma_y$) | Weight ($w$) |
-| :--- | :--- | :--- | :--- | :--- | :--- |
-| **Breakdown** | `3.883881` | `0.999395` | `7.1072e-5` | `1.0731e-4` | `0.739114` |
-| **Leakage IV** | `301.3095` | `173.3395` | `1.8449e-6` | `1.3856e-6` | `0.974888` |
-| **Turn-On** | `3.883881` | `0.999395` | `7.1072e-5` | `1.0731e-4` | `0.739114` |
+Output currents are computed in physical units of **microAmpere** ($\mu\text{A}$) to ensure direct compatibility with laboratory test instrumentation.
 
 ---
 
-## 5. AI Explainability & LLM Integration (Groq Llama 3.3)
+## 5. AI Explainability Engine
 
-The AI Diagnostic Chatbot uses **Groq's Llama 3.3 70B Versatile** model (`llama-3.3-70b-versatile`) via direct HTTP REST API calls.
-
-### Prompt Structuring:
-Prompts are structured to enforce **concise, direct, 3-point outputs strictly under 100 words**:
-1. **Deviation Summary**: Quantitative drift percentage and ratio relative to baseline.
-2. **Physics Cause**: Primary semiconductor degradation mechanism (e.g. Avalanche multiplication, Shockley-Read-Hall recombination, oxide charge trapping $\Delta V_{th}$, or solder fatigue).
-3. **Screening Action**: Decision ( PASS / HOLD / REJECT) and immediate next validation test step.
+Explanations are produced by Groq Llama 3.3 using structured failure physics templates:
+1. **Deviation Summary**: Quantitative drift percentage and baseline ratio.
+2. **Physics Cause**: Primary semiconductor degradation mechanism (e.g., Avalanche multiplication, Shockley-Read-Hall recombination, oxide trapping, or thermal fatigue).
+3. **Screening Action**: Decision (PASS, HOLD, or REJECT) with recommended physical testing action.
 
 ---
 
-## 6. Python Programmatic API Reference
+## 6. Python Programmatic Usage
 
-You can call the screening pipeline directly in Python scripts or Jupyter Notebooks:
+The pipeline can be executed directly within Python environments:
 
 ```python
 from backend.pipeline import ScreeningPipeline
 
 pipeline = ScreeningPipeline()
 
-# Process component measurement
 result = pipeline.process_screening(
- model_type="breakdown",
- raw_input=550.0,
- user_said_output=1.25e-5,
- component_id="NASA-IGBT-Part-12"
+    model_type="breakdown",
+    raw_input=550.0,
+    time_minutes=90960.0,
+    user_said_output=12.50
 )
 
-print("Verdict:", result["discrepancy"]["risk_decision"])
+print("Decision:", result["discrepancy"]["risk_decision"])
 print("Explanation:\n", result["chatbot_explanation"])
-```
-
-Or invoke the AI Chatbot directly:
-```python
-from models.chatbot import SemiconductorChatbot
-
-bot = SemiconductorChatbot()
-reply = bot.chat("Explain the difference between Fowler-Nordheim tunneling and Poole-Frenkel emission.")
-print(reply)
 ```
 
 ---
 
-## 7. Error Handling & High-Availability Fallback
+## 7. Resilience and Fallback Modes
 
-The API guarantees **100% uptime and resilience**:
-- **Zero External PIP Dependencies**: Standard library `urllib.request` and `http.server` ensure the server starts anywhere without `pip install` failures.
-- **Graceful AI Fallback**: If Groq API experiences rate limits, network timeouts, or missing keys, the system automatically falls back to its built-in rule-based physics engine with zero downtime and zero user-facing errors.
-- **Standard Error Schema**:
- ```json
- {
- "error": "Descriptive error message",
- "status": 400
- }
- ```
+- **Zero Mandatory Package Dependencies**: Runs directly on the Python standard library.
+- **Automatic Fallback**: If external API connections are unavailable, the system switches immediately to local rule-based physics explanations without interrupting screening operations.
+- **Consistent Error Structure**:
+  ```json
+  {
+    "error": "Descriptive error message",
+    "status": 400
+  }
+  ```
+

@@ -45,18 +45,18 @@ class ScreeningPipeline:
         raw_input: float,
         user_said_output: Optional[float] = None,
         component_id: str = "DUT-01",
+        time_minutes: Optional[float] = None,
         use_ai: bool = True
     ) -> Dict[str, Any]:
         """
-        Execute MinMaxScaler screening pipeline:
-        1. Takes user input X.
-        2. Evaluates model with MinMaxScaler normalization to produce physical Y_model and normalized [0, 1] values.
-        3. If user_said_output is given, computes discrepancy and generates physics explanation.
-           If user_said_output is omitted, explains model dynamics at that operating point.
+        Execute Time-Series & MinMaxScaler screening pipeline:
+        1. Takes user input X and time_minutes.
+        2. Evaluates GBR time-series regression model with normalization.
+        3. Computes discrepancy, residuals, and generates physics explanation.
         4. Saves record into SQLite DB.
         """
-        # Step 1: Direct MinMaxScaler Model Inference
-        pred = self.model_engine.predict(model_type, raw_input)
+        # Step 1: Direct Time-Series & Model Inference
+        pred = self.model_engine.predict(model_type, raw_input, time_minutes=time_minutes)
         physical_y_model = pred["physical_output"]
         scaled_x = pred["scaled_input"]
         scaled_y = pred["scaled_output"]

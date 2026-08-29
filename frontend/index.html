@@ -76,7 +76,8 @@
                     <div class="card-body">
                         <div class="card-icon-box icon-blue">⚡</div>
                         <h2 class="card-heading">Time-Series & Breakdown</h2>
-                        <p class="card-text">Collector-Emitter Voltage (V) vs Leakage Current (microAmpere). Time-series degradation forecasting & avalanche breakdown prediction.</p>
+                        <p class="card-text">Collector-Emitter Voltage (V) vs Leakage Current (microAmpere). Time-series
+                            degradation forecasting & avalanche breakdown prediction.</p>
                         <span class="card-action text-blue">Open Model &rarr;</span>
                     </div>
                 </div>
@@ -87,7 +88,8 @@
                     <div class="card-body">
                         <div class="card-icon-box icon-green">🔍</div>
                         <h2 class="card-heading">Leakage IV Model</h2>
-                        <p class="card-text">Applied Voltage (V) vs Leakage Current (microAmpere). Detects Shockley-Read-Hall deep-level generation.</p>
+                        <p class="card-text">Applied Voltage (V) vs Leakage Current (microAmpere). Detects
+                            Shockley-Read-Hall deep-level generation.</p>
                         <span class="card-action text-green">Open Model &rarr;</span>
                     </div>
                 </div>
@@ -98,7 +100,8 @@
                     <div class="card-body">
                         <div class="card-icon-box icon-navy">🔄</div>
                         <h2 class="card-heading">Turn-On Model</h2>
-                        <p class="card-text">Gate Voltage (V) vs Collector Current (microAmpere). Detects positive threshold voltage shift.</p>
+                        <p class="card-text">Gate Voltage (V) vs Collector Current (microAmpere). Detects positive
+                            threshold voltage shift.</p>
                         <span class="card-action text-navy">Open Model &rarr;</span>
                     </div>
                 </div>
@@ -107,14 +110,19 @@
 
         <!-- ============================================================= -->
         <!-- VIEW 2: INDIVIDUAL MODEL SPLIT-SCREEN VIEW                    -->
-        <!-- Left: Model Controls & Results | Right: Graphs (Compulsory)  -->
+        <!-- Left: Model Controls & Results | Right: 2 Visuals + Toolbar  -->
         <!-- ============================================================= -->
         <section id="view-model" class="view-section">
+
+            <!-- MODEL HEADER BAR (Back Link + Title + Param Badge) -->
             <div class="model-topbar">
-                <button class="back-link" onclick="navigateTo('landing')">&larr; Back to Dashboard</button>
-                <div class="model-title-wrap">
-                    <h1 class="model-title" id="activeModelTitle">Breakdown Model</h1>
-                    <span class="model-badge" id="activeModelParamTag">Voltage (V) vs Current (A)</span>
+                <div class="model-topbar-left">
+                    <button class="back-link" onclick="navigateTo('landing')">&larr; Back to Dashboard</button>
+                    <div class="model-title-wrap">
+                        <h1 class="model-title" id="activeModelTitle">Time-Series & Breakdown Model</h1>
+                        <span class="model-badge" id="activeModelParamTag">Voltage (V) vs Leakage Current
+                            (microAmpere)</span>
+                    </div>
                 </div>
             </div>
 
@@ -124,26 +132,22 @@
                 <!-- LEFT COLUMN: MODEL CONTROLS & SCREENING METRICS -->
                 <div class="col-left">
 
-                    <!-- INPUT & SCREENING CONTROLS -->
+                    <!-- 1. MODEL CONTROLS PANEL -->
                     <div class="panel">
                         <div class="panel-head">
                             <h3>Model Controls</h3>
                         </div>
                         <div class="panel-body">
                             <form id="screeningForm" onsubmit="event.preventDefault(); runModelPipeline();">
-                                <div class="form-grid">
-                                    <div class="field">
-                                        <label for="inputCompId">Component ID</label>
-                                        <input type="text" id="inputCompId" class="input-text"
-                                            value="NASA-IGBT-Part-12">
-                                    </div>
-                                    <div class="field">
-                                        <label for="inputRawX" id="labelRawX">Input Voltage (V)</label>
-                                        <input type="number" step="any" id="inputRawX" class="input-text" value="550.0"
-                                            required onchange="onInputChangeX(this.value)">
-                                    </div>
+
+                                <!-- Voltage Input -->
+                                <div class="field">
+                                    <label for="inputRawX" id="labelRawX">Input Voltage (V)</label>
+                                    <input type="number" step="any" id="inputRawX" class="input-text" value="550.0"
+                                        required onchange="onInputChangeX(this.value)">
                                 </div>
 
+                                <!-- Voltage Slider -->
                                 <div class="field">
                                     <div class="field-header">
                                         <span class="field-sublabel">Voltage Slider</span>
@@ -153,24 +157,45 @@
                                         value="550" oninput="onSliderChangeX(this.value)">
                                 </div>
 
-                                <div class="field">
-                                    <label for="inputUserY" id="labelUserY">Measured Current (microAmpere)</label>
-                                    <input type="number" step="any" id="inputUserY" class="input-text" value="12.5"
-                                        onchange="onInputChangeY(this.value)">
+                                <!-- Elapsed Time Scrubber -->
+                                <div class="field time-scrubber-field">
+                                    <div class="field-header">
+                                        <span class="field-sublabel">Elapsed Time (t)</span>
+                                        <span class="val-badge val-badge-navy" id="sliderValTime">90,960 min</span>
+                                    </div>
+                                    <input type="range" id="sliderTime" class="range-slider slider-navy" min="0"
+                                        max="113700" step="30" value="90960" oninput="onSliderChangeTime(this.value)">
+
+                                    <!-- Play / Step Controls -->
+                                    <div class="time-playback-toolbar">
+                                        <button type="button" class="playback-btn" id="btnPlaySim"
+                                            onclick="toggleSimulation()">
+                                            ▶ Auto-Play
+                                        </button>
+                                        <button type="button" class="playback-btn-sec" onclick="stepTime(300)">
+                                            +5h Step
+                                        </button>
+                                        <button type="button" class="playback-btn-sec" onclick="resetTimeScrubber()">
+                                            ⏮ Reset
+                                        </button>
+                                    </div>
                                 </div>
 
+                                <!-- Measured Current Input & Slider -->
                                 <div class="field">
                                     <div class="field-header">
-                                        <span class="field-sublabel">Current Slider</span>
-                                        <span class="val-badge text-orange" id="sliderValY">12.50 uA</span>
+                                        <label for="inputUserY" id="labelUserY">Measured Current (uA)</label>
+                                        <span class="val-badge val-badge-orange" id="sliderValY">12.50 uA</span>
                                     </div>
+                                    <input type="number" step="any" id="inputUserY" class="input-text" value="12.5"
+                                        onchange="onInputChangeY(this.value)" style="margin-bottom: 6px;">
                                     <input type="range" id="sliderY" class="range-slider slider-orange" min="0"
                                         max="150" step="0.1" value="12.5" oninput="onSliderChangeY(this.value)">
                                 </div>
 
-                                <!-- Presets -->
+                                <!-- Presets Row -->
                                 <div class="presets-row">
-                                    <span class="presets-title">Presets:</span>
+                                    <span class="presets-title">PRESETS:</span>
                                     <div class="presets-buttons" id="modelPresetsContainer"></div>
                                 </div>
 
@@ -181,51 +206,32 @@
                         </div>
                     </div>
 
-                    <!-- SCREENING RESULTS & METRICS (Live Dynamic Data) -->
-                    <div class="panel" id="resultsPanel" style="display:none;">
+                    <!-- 2. SCREENING HEALTH DECISION & METRICS -->
+                    <div class="panel" id="resultsPanel">
                         <div class="panel-head">
-                            <h3>Screening Result</h3>
-                            <span class="verdict-pill" id="riskDecisionBadge">—</span>
+                            <div class="panel-title-wrap">
+                                <h3>Screening Verdict</h3>
+                            </div>
+                            <span class="verdict-pill badge-pass" id="riskDecisionBadge">PASS</span>
                         </div>
                         <div class="panel-body">
-                            <div class="metrics-grid">
-                                <div class="metric-card">
-                                    <div class="metric-val" id="statRawX">—</div>
-                                    <div class="metric-key">Input Voltage (V)</div>
-                                </div>
-                                <div class="metric-card">
-                                    <div class="metric-val" id="statScaledX">—</div>
-                                    <div class="metric-key">MinMax Scaled Input</div>
-                                </div>
+                            <!-- 4-Metric Grid -->
+                            <div class="metrics-grid" id="metricsDeckGrid" style="display: grid;">
                                 <div class="metric-card border-blue">
-                                    <div class="metric-val text-blue" id="statModelY">—</div>
-                                    <div class="metric-key" id="lblModelOutput">Model Output (microAmpere)</div>
+                                    <div class="metric-val text-blue" id="statModelY">0.01 uA</div>
+                                    <div class="metric-key" id="lblModelOutput">GBR Forecast</div>
                                 </div>
                                 <div class="metric-card border-orange">
-                                    <div class="metric-val text-orange" id="statUserY">—</div>
-                                    <div class="metric-key" id="lblUserOutput">Measured Output (microAmpere)</div>
+                                    <div class="metric-val text-orange" id="statUserY">12.50 uA</div>
+                                    <div class="metric-key" id="lblUserOutput">Measured</div>
                                 </div>
                                 <div class="metric-card">
-                                    <div class="metric-val" id="statPctDiff">—</div>
-                                    <div class="metric-key">Deviation %</div>
+                                    <div class="metric-val" id="statResidual">+12.49 uA</div>
+                                    <div class="metric-key">Residual Error</div>
                                 </div>
                                 <div class="metric-card">
-                                    <div class="metric-val" id="statRatio">—</div>
-                                    <div class="metric-key">Ratio</div>
-                                </div>
-                            </div>
-
-                            <!-- LIVE AI FAILURE DIAGNOSTIC REPORT (Groq Llama 3.3) -->
-                            <div class="ai-report-box" id="aiReportBox" style="margin-top: 14px;">
-                                <div class="ai-report-header">
-                                    <div class="ai-report-title-wrap">
-                                        <span class="ai-report-icon">🤖</span>
-                                        <span class="ai-report-title">Drishti AI Diagnostic Analysis</span>
-                                    </div>
-                                    <span class="ai-report-badge" id="reportEngineBadge">Groq Llama 3.3</span>
-                                </div>
-                                <div class="ai-report-content" id="aiReportText">
-                                    <!-- Populated dynamically by live LLM API -->
+                                    <div class="metric-val" id="statPctDiff">+99.9%</div>
+                                    <div class="metric-key">Drift %</div>
                                 </div>
                             </div>
                         </div>
@@ -233,59 +239,92 @@
 
                 </div>
 
-                <!-- RIGHT COLUMN: DATA DIAGRAMS & VISUALS (COMPULSORY ON RIGHT) -->
+                <!-- RIGHT COLUMN: AI EXPLAINABILITY (TOP) + 2 VISUALS (BELOW) -->
                 <div class="col-right">
 
-                    <!-- VISUAL 1: SCATTERPLOT -->
-                    <div class="panel">
+                    <!-- 1. AI EXPLAINABILITY & FAILURE PHYSICS DIAGNOSTIC CARD (TOP) -->
+                    <div class="panel" id="cardAIExplainability">
                         <div class="panel-head">
-                            <div>
-                                <h3>1. Dataset Scatterplot</h3>
-                                <span class="panel-sub">Click or drag on chart to reposition test point</span>
+                            <div class="panel-title-wrap">
+                                <h3>🤖 AI Failure Physics & Explainability</h3>
                             </div>
-                            <div class="chart-controls">
-                                <button type="button" class="ctrl-btn active" id="btnModeScatterPoint"
-                                    onclick="setChartMode('scatter', 'point')" title="Click/drag to move test point">🎯
-                                    Move Point</button>
-                                <button type="button" class="ctrl-btn" id="btnModeScatterPan"
-                                    onclick="setChartMode('scatter', 'pan')" title="Drag to pan view">🖐️ Pan
-                                    View</button>
-                                <button type="button" class="ctrl-btn" onclick="zoomChart('scatter', 1.25)"
-                                    title="Zoom In">🔍+</button>
-                                <button type="button" class="ctrl-btn" onclick="zoomChart('scatter', 0.8)"
-                                    title="Zoom Out">🔍-</button>
-                                <button type="button" class="ctrl-btn" onclick="resetChartZoom('scatter')"
-                                    title="Reset View">🔄 Reset</button>
-                            </div>
+                            <span class="ai-report-badge" id="reportEngineBadge">Groq Llama 3.3 Active</span>
                         </div>
-                        <div class="panel-body chart-box" id="scatterBox">
-                            <canvas id="scatterplotCanvas"></canvas>
+                        <div class="panel-body">
+
+                            <!-- Explainability Content (Deviation + Physical Cause + Next Action) -->
+                            <div class="ai-report-content" id="aiReportText">
+                                <div
+                                    style="background: #f8fafc; border: 1px solid var(--border); padding: 10px 12px; border-radius: 6px; font-size: 0.84rem; color: #334155; line-height: 1.5;">
+                                    <strong>Status:</strong> Adjust inputs or click <em>Run Screening & Explain</em> to generate failure physics diagnostics.
+                                </div>
+                            </div>
+
+                            <!-- Integrated Interactive Chat Bar -->
+                            <div class="chat-inline-row" style="margin-top: 10px; display: flex; gap: 8px;">
+                                <input type="text" id="modelInlineChatInput" class="input-text"
+                                    placeholder="Ask AI about this failure mode or test data..."
+                                    style="flex: 1; font-size: 0.84rem; padding: 7px 10px;"
+                                    onkeydown="if(event.key==='Enter') sendModelInlineChat()">
+                                <button type="button" class="btn-chat-send" onclick="sendModelInlineChat()"
+                                    style="background: var(--chakra-navy); color: #fff; border: none; padding: 7px 16px; border-radius: 6px; font-weight: 700; cursor: pointer; font-size: 0.84rem;">
+                                    Ask AI
+                                </button>
+                            </div>
                         </div>
                     </div>
 
-                    <!-- VISUAL 2: LINE CHART -->
-                    <div class="panel">
+                    <!-- VISUAL 1: ACTUAL VS PREDICTED TIME-SERIES FORECAST (CURRENT VS TIME) -->
+                    <div class="panel visual-card" id="cardVisualForecast">
                         <div class="panel-head">
                             <div>
-                                <h3>2. Model Regression Curve</h3>
-                                <span class="panel-sub">Click on curve to test specific operating point</span>
+                                <h3 id="headingVisual1">1. Leakage Current vs Time (Telemetry & GBR Forecast)</h3>
+                                <span class="panel-sub" id="subVisual1">Telemetry (3,790 rows, Δt=30min) • 80% Train / 20% Forecast</span>
                             </div>
                             <div class="chart-controls">
-                                <button type="button" class="ctrl-btn active" id="btnModeLinePoint"
-                                    onclick="setChartMode('line', 'point')" title="Click/drag to move test point">🎯
+                                <button type="button" class="ctrl-btn active" id="btnModeForecastPoint"
+                                    onclick="setChartMode('forecast', 'point')" title="Click/drag to move test point">🎯
                                     Move Point</button>
-                                <button type="button" class="ctrl-btn" id="btnModeLinePan"
-                                    onclick="setChartMode('line', 'pan')" title="Drag to pan view">🖐️ Pan View</button>
-                                <button type="button" class="ctrl-btn" onclick="zoomChart('line', 1.25)"
+                                <button type="button" class="ctrl-btn" id="btnModeForecastPan"
+                                    onclick="setChartMode('forecast', 'pan')" title="Drag to pan view">🖐️ Pan
+                                    View</button>
+                                <button type="button" class="ctrl-btn" id="btnSampleData1"
+                                    onclick="toggleSampleDataVisual(1)" title="Toggle Sample Lab Dataset Scatterplot">🔬
+                                    Sample Data</button>
+                                <button type="button" class="ctrl-btn" onclick="zoomChart('forecast', 1.25)"
                                     title="Zoom In">🔍+</button>
-                                <button type="button" class="ctrl-btn" onclick="zoomChart('line', 0.8)"
+                                <button type="button" class="ctrl-btn" onclick="zoomChart('forecast', 0.8)"
                                     title="Zoom Out">🔍-</button>
-                                <button type="button" class="ctrl-btn" onclick="resetChartZoom('line')"
+                                <button type="button" class="ctrl-btn" onclick="resetChartZoom('forecast')"
                                     title="Reset View">🔄 Reset</button>
                             </div>
                         </div>
-                        <div class="panel-body chart-box" id="lineBox">
-                            <canvas id="lineChartCanvas"></canvas>
+                        <div class="panel-body chart-box" id="forecastBox" style="min-height: 270px;">
+                            <canvas id="tsForecastCanvas"></canvas>
+                        </div>
+                    </div>
+
+                    <!-- VISUAL 2: OPERATING VOLTAGE VS TIME PROFILE -->
+                    <div class="panel visual-card" id="cardVisualVoltage">
+                        <div class="panel-head">
+                            <div>
+                                <h3 id="headingVisual2">2. Operating Voltage vs Time (Stress Trajectory)</h3>
+                                <span class="panel-sub" id="subVisual2">Applied voltage across accelerated aging time</span>
+                            </div>
+                            <div class="chart-controls">
+                                <button type="button" class="ctrl-btn" id="btnSampleData2"
+                                    onclick="toggleSampleDataVisual(2)" title="Toggle Sample Baseline & Limit Curve">🔬
+                                    Sample Curve</button>
+                                <button type="button" class="ctrl-btn" onclick="zoomChart('voltage', 1.25)"
+                                    title="Zoom In">🔍+</button>
+                                <button type="button" class="ctrl-btn" onclick="zoomChart('voltage', 0.8)"
+                                    title="Zoom Out">🔍-</button>
+                                <button type="button" class="ctrl-btn" onclick="resetChartZoom('voltage')"
+                                    title="Reset View">🔄 Reset</button>
+                            </div>
+                        </div>
+                        <div class="panel-body chart-box" id="voltageBox" style="min-height: 240px;">
+                            <canvas id="tsVoltageCanvas"></canvas>
                         </div>
                     </div>
 
@@ -304,33 +343,32 @@
                 <!-- HERO BANNER -->
                 <div class="about-hero-card">
                     <div class="header-badges">
-                        <span class="pill-orange">Team: Drishti — Insightful Vision</span>
-                        <span class="pill-blue">Problem ID: SIH26170</span>
+                        <span class="pill-orange">Team Drishti</span>
+                        <span class="pill-blue">Problem SIH26170</span>
                         <span class="pill-green">Symbiosis Institute of Technology, Pune</span>
                     </div>
                     <h1 class="about-main-title">AI-Driven Anomaly Detection in Component Burn-In & Screening</h1>
                     <p class="about-lead">
-                        Predictive Environmental Stress Screening (ESS) and Latent Defect Detection for Space &
-                        Aerospace High-Reliability Electronics.
+                        Predictive environmental stress screening and latent defect detection built to safeguard aerospace and satellite electronics against mission-critical failures.
                     </p>
 
                     <!-- KEY STAT COUNTERS -->
                     <div class="about-stats-row">
                         <div class="about-stat-box">
                             <div class="about-stat-number text-orange">4</div>
-                            <div class="about-stat-label">Intervals (0h, 24h, 96h, 168h)</div>
+                            <div class="about-stat-label">Burn-In Checkpoints</div>
                         </div>
                         <div class="about-stat-box">
                             <div class="about-stat-number text-blue">125°C</div>
-                            <div class="about-stat-label">Burn-In Thermal Stress</div>
+                            <div class="about-stat-label">Thermal Stress Screening</div>
                         </div>
                         <div class="about-stat-box">
                             <div class="about-stat-number text-navy">2</div>
-                            <div class="about-stat-label">Core AI/ML Modules</div>
+                            <div class="about-stat-label">Predictive ML Pipelines</div>
                         </div>
                         <div class="about-stat-box">
                             <div class="about-stat-number text-green">0%</div>
-                            <div class="about-stat-label">False Negative Tolerance</div>
+                            <div class="about-stat-label">Escape Tolerance</div>
                         </div>
                     </div>
                 </div>
@@ -341,29 +379,23 @@
                     <!-- PANEL 1: PROBLEM STATEMENT & BACKGROUND -->
                     <div class="panel">
                         <div class="panel-head">
-                            <h3>1. Background & Problem Statement</h3>
+                            <h3>1. The Challenge We Solve</h3>
                             <span class="badge-tag">Context</span>
                         </div>
                         <div class="panel-body">
                             <p class="section-desc">
-                                In high-reliability sectors like space, electronic components undergo rigorous
-                                Environmental Stress Screening (ESS), including Burn-In testing at elevated temperatures
-                                (e.g., 125°C for extended periods like 0h, 24h, 96h, and 168h).
+                                In space and defense applications, electronics undergo rigorous environmental stress screening at elevated temperatures up to 125°C across hundreds of operational hours.
                             </p>
                             <div class="callout-box">
-                                <strong>⚠️ The Latent Defect Dilemma:</strong><br>
-                                Traditional screening relies on static parametric pass/fail limits. However, components
-                                that pass absolute datasheet limits often exhibit subtle, anomalous drift over time,
-                                escaping into final flight payloads and causing catastrophic failures.
+                                <strong>⚠️ The Hidden Defect Dilemma:</strong><br>
+                                Traditional testing relies solely on static pass or fail thresholds. When subtle internal degradation drifts quietly below standard limits, flawed semiconductors slip through to flight payloads, risking catastrophic failure in orbit.
                             </div>
                             <div class="example-box mt-2">
-                                <div class="ex-title">Realistic Screening Example:</div>
-                                <div class="ex-row"><span>• Lot Mean Leakage:</span> <strong>10 μA</strong></div>
-                                <div class="ex-row"><span>• Anomaly Part Leakage:</span> <strong class="text-orange">45
-                                        μA</strong></div>
-                                <div class="ex-row"><span>• Datasheet Max Limit:</span> <strong>50 μA</strong></div>
-                                <div class="ex-note"><em>Technically passes static limits, but is a massive latent
-                                        failure risk!</em></div>
+                                <div class="ex-title">Real-World Screening Scenario:</div>
+                                <div class="ex-row"><span>• Typical Batch Current:</span> <strong>10 μA</strong></div>
+                                <div class="ex-row"><span>• Anomalous Part Current:</span> <strong class="text-orange">45 μA</strong></div>
+                                <div class="ex-row"><span>• Fixed Datasheet Ceiling:</span> <strong>50 μA</strong></div>
+                                <div class="ex-note"><em>Passes traditional static limits, yet represents an extreme latent flight risk.</em></div>
                             </div>
                         </div>
                     </div>
@@ -371,30 +403,26 @@
                     <!-- PANEL 2: EXPECTED SOLUTION (MODULE A & B) -->
                     <div class="panel">
                         <div class="panel-head">
-                            <h3>2. System Architecture & Solution Modules</h3>
+                            <h3>2. Our Engineering Solution</h3>
                             <span class="badge-tag">Pipeline</span>
                         </div>
                         <div class="panel-body">
                             <div class="module-card">
                                 <div class="mod-header">
                                     <span class="mod-icon">🔍</span>
-                                    <div class="mod-title text-orange">Module A: Dynamic Outlier Detection</div>
+                                    <div class="mod-title text-orange">Population Outlier Detection</div>
                                 </div>
                                 <p class="mod-text">
-                                    Static limits catch obvious failures. Module A dynamically compares individual
-                                    component trajectories against the lot population distribution, flagging subtle
-                                    population-relative outliers.
+                                    Instead of looking only at hard ceilings, our system continuously compares each component's drift curve against the entire batch population, flagging parts that behave abnormally compared to healthy peers.
                                 </p>
                             </div>
                             <div class="module-card mt-2">
                                 <div class="mod-header">
                                     <span class="mod-icon">📈</span>
-                                    <div class="mod-title text-blue">Module B: Time-Series Drift Predictor</div>
+                                    <div class="mod-title text-blue">Time-Series Drift Forecast</div>
                                 </div>
                                 <p class="mod-text">
-                                    Predictive regression model that ingests early burn-in data ($Value_{0h}$ and
-                                    $Value_{24h}$) to forecast $Value_{168h}$. If the forecasted drift rate exceeds a
-                                    calculated safety slope, the component is flagged for early rejection.
+                                    A gradient boosted regression engine that analyzes initial burn-in telemetry to predict long-term performance at 168 hours. If the predicted degradation curve shows runaway behavior, the part is caught early.
                                 </p>
                             </div>
                         </div>
@@ -403,26 +431,21 @@
                     <!-- PANEL 3: EVALUATION METRICS -->
                     <div class="panel">
                         <div class="panel-head">
-                            <h3>3. QA Standards & Evaluation Metrics</h3>
+                            <h3>3. Reliability & Explainability</h3>
                             <span class="badge-tag">Standards</span>
                         </div>
                         <div class="panel-body">
                             <div class="eval-item">
-                                <div class="eval-head">🛡️ Anomaly Detection Score</div>
-                                <div class="eval-body">In aerospace mission-critical payloads, missing a defective part
-                                    (False Negative) is catastrophic. The model applies heavy penalization against
-                                    escapes.</div>
+                                <div class="eval-head">🛡️ Anomaly Detection Precision</div>
+                                <div class="eval-body">In aerospace missions, missing a defective part is unacceptable. Our screening model heavily penalizes defect escapes to ensure zero faulty components reach flight assembly.</div>
                             </div>
                             <div class="eval-item mt-2">
-                                <div class="eval-head">📊 Drift Prediction Accuracy</div>
-                                <div class="eval-body">Minimizes Mean Absolute Error (MAE) between the predicted
-                                    $Value_{168h}$ forecast and the actual hidden ground-truth values.</div>
+                                <div class="eval-head">📊 Drift Forecast Accuracy</div>
+                                <div class="eval-body">Trained to minimize prediction error between early burn-in measurements and actual extended lifecycle performance.</div>
                             </div>
                             <div class="eval-item mt-2">
                                 <div class="eval-head">🧠 Physics-Grounded Explainability</div>
-                                <div class="eval-body">Powered by <strong>Groq Llama 3.3</strong>, the system translates
-                                    mathematical deviations into actionable semiconductor physics explanations
-                                    (Avalanche, SRH, $\Delta V_{th}$) for QA inspectors.</div>
+                                <div class="eval-body">Powered by <strong>Groq Llama 3.3</strong>, the system translates mathematical curve shifts into clear semiconductor failure explanations, covering avalanche breakdown, carrier trap recombination, and threshold voltage drift for quality assurance teams.</div>
                             </div>
                         </div>
                     </div>
@@ -430,7 +453,7 @@
                     <!-- PANEL 4: TEAM DRISHTI MEMBERS & PRNs -->
                     <div class="panel">
                         <div class="panel-head">
-                            <h3>4. Team Drishti — Insightful Vision</h3>
+                            <h3>4. Team Drishti</h3>
                             <span class="badge-tag">SIT Pune</span>
                         </div>
                         <div class="panel-body">
@@ -439,7 +462,6 @@
                                     <div class="member-avatar">SB</div>
                                     <div class="member-info">
                                         <div class="member-name">Samarth Buchake</div>
-                                        <div class="member-role">ML & Fullstack Lead</div>
                                         <div class="member-prn">PRN: 25070126151</div>
                                     </div>
                                 </div>
@@ -447,7 +469,6 @@
                                     <div class="member-avatar">VP</div>
                                     <div class="member-info">
                                         <div class="member-name">Vibhuti Patil</div>
-                                        <div class="member-role">Physics of Failure & Models</div>
                                         <div class="member-prn">PRN: 25070126193</div>
                                     </div>
                                 </div>
@@ -455,7 +476,6 @@
                                     <div class="member-avatar">MK</div>
                                     <div class="member-info">
                                         <div class="member-name">Maitreyee Kulkarni</div>
-                                        <div class="member-role">Data Preprocessing & Calibration</div>
                                         <div class="member-prn">PRN: 24070123058</div>
                                     </div>
                                 </div>
@@ -463,7 +483,6 @@
                                     <div class="member-avatar">VK</div>
                                     <div class="member-info">
                                         <div class="member-name">Varija Korti</div>
-                                        <div class="member-role">Time-Series & Drift Prediction</div>
                                         <div class="member-prn">PRN: 24070123165</div>
                                     </div>
                                 </div>
@@ -471,7 +490,6 @@
                                     <div class="member-avatar">KS</div>
                                     <div class="member-info">
                                         <div class="member-name">Kaushal Sidhpura</div>
-                                        <div class="member-role">Dynamic Outlier Detection</div>
                                         <div class="member-prn">PRN: 25070127093</div>
                                     </div>
                                 </div>
@@ -479,12 +497,11 @@
                                     <div class="member-avatar">PH</div>
                                     <div class="member-info">
                                         <div class="member-name">Prachi Hirve</div>
-                                        <div class="member-role">Explainability & QA Diagnostics</div>
                                         <div class="member-prn">PRN: 26070126090</div>
                                     </div>
                                 </div>
                             </div>
-                            <div class="inst-tag">Symbiosis Institute of Technology (SIT), Pune</div>
+                            <div class="inst-tag">Symbiosis Institute of Technology, Pune</div>
                         </div>
                     </div>
 
@@ -515,7 +532,8 @@
             </div>
             <div class="ai-drawer-footer">
                 <input type="text" id="interactiveChatInput" class="input-chat"
-                    placeholder="Ask Drishti AI about physics..." onkeydown="if(event.key==='Enter') sendChatMessage();">
+                    placeholder="Ask Drishti AI about physics..."
+                    onkeydown="if(event.key==='Enter') sendChatMessage();">
                 <button class="btn-chat" onclick="sendChatMessage()">Send</button>
             </div>
         </div>
