@@ -1,0 +1,515 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dhrishti - Semiconductor Component Screening</title>
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600&display=swap"
+        rel="stylesheet">
+    <!-- Chart.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    <link rel="stylesheet" href="/styles.css">
+</head>
+
+<body>
+
+    <!-- Tricolor Accent Top Bar -->
+    <div class="tricolor-bar"></div>
+
+    <!-- Navigation Header -->
+    <header class="navbar">
+        <div class="nav-brand" onclick="navigateTo('landing')">
+            <div class="brand-badge">SIH26170</div>
+            <div class="brand-text">
+                <span class="brand-title">Dhrishti</span>
+                <span class="brand-sub">Insightful Vision • SIT Pune</span>
+            </div>
+        </div>
+        <nav class="nav-links">
+            <button class="nav-btn active" id="nav-landing" onclick="navigateTo('landing')">Home</button>
+            <button class="nav-btn" id="nav-breakdown" onclick="loadModelPage('breakdown')">Breakdown</button>
+            <button class="nav-btn" id="nav-leakage" onclick="loadModelPage('leakage')">Leakage IV</button>
+            <button class="nav-btn" id="nav-turnon" onclick="loadModelPage('turnon')">Turn-On</button>
+            <button class="nav-btn" id="nav-about" onclick="navigateTo('about')">About Us</button>
+        </nav>
+        <div class="engine-badge">
+            <span class="status-dot"></span>
+            <span id="engineText">Groq Llama 3.3 Active</span>
+        </div>
+    </header>
+
+    <!-- Main Content Area -->
+    <main class="main-content">
+
+        <!-- ============================================================= -->
+        <!-- VIEW 1: LANDING PAGE (4 CARDS)                                -->
+        <!-- ============================================================= -->
+        <section id="view-landing" class="view-section active">
+            <div class="hero-container">
+                <h1 class="hero-heading">Semiconductor Stress Screening & Anomaly Detection</h1>
+                <p class="hero-subheading">Select a model to evaluate component measurements, view dataset curves, and
+                    generate AI failure diagnostics.</p>
+            </div>
+
+            <!-- 4 CARDS -->
+            <div class="cards-grid">
+                <!-- CARD 1: ABOUT US -->
+                <div class="dash-card card-about" onclick="navigateTo('about')">
+                    <div class="card-header-bar bar-orange"></div>
+                    <div class="card-body">
+                        <div class="card-icon-box icon-orange">👥</div>
+                        <h2 class="card-heading">About Us</h2>
+                        <p class="card-text">Team Dhrishti overview, screening pipeline, and official SIH26170 problem
+                            statement.</p>
+                        <span class="card-action text-orange">View Details &rarr;</span>
+                    </div>
+                </div>
+
+                <!-- CARD 2: BREAKDOWN MODEL -->
+                <div class="dash-card" onclick="loadModelPage('breakdown')">
+                    <div class="card-header-bar bar-blue"></div>
+                    <div class="card-body">
+                        <div class="card-icon-box icon-blue">⚡</div>
+                        <h2 class="card-heading">Breakdown Model</h2>
+                        <p class="card-text">Collector-Emitter Voltage (V) vs Leakage Current (A). Detects avalanche
+                            breakdown knee shift.</p>
+                        <span class="card-action text-blue">Open Model &rarr;</span>
+                    </div>
+                </div>
+
+                <!-- CARD 3: LEAKAGE IV MODEL -->
+                <div class="dash-card" onclick="loadModelPage('leakage')">
+                    <div class="card-header-bar bar-green"></div>
+                    <div class="card-body">
+                        <div class="card-icon-box icon-green">🔍</div>
+                        <h2 class="card-heading">Leakage IV Model</h2>
+                        <p class="card-text">Applied Voltage (V) vs Leakage Current (A). Detects Shockley-Read-Hall
+                            generation.</p>
+                        <span class="card-action text-green">Open Model &rarr;</span>
+                    </div>
+                </div>
+
+                <!-- CARD 4: TURN-ON MODEL -->
+                <div class="dash-card" onclick="loadModelPage('turnon')">
+                    <div class="card-header-bar bar-navy"></div>
+                    <div class="card-body">
+                        <div class="card-icon-box icon-navy">🔄</div>
+                        <h2 class="card-heading">Turn-On Model</h2>
+                        <p class="card-text">Gate Voltage (V) vs Collector Current (A). Detects positive threshold
+                            voltage shift.</p>
+                        <span class="card-action text-navy">Open Model &rarr;</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ============================================================= -->
+        <!-- VIEW 2: INDIVIDUAL MODEL SPLIT-SCREEN VIEW                    -->
+        <!-- Left: Model & Chatbot | Right: Scatterplot & Line Chart       -->
+        <!-- ============================================================= -->
+        <section id="view-model" class="view-section">
+            <div class="model-topbar">
+                <button class="back-link" onclick="navigateTo('landing')">&larr; Back to Dashboard</button>
+                <div class="model-title-wrap">
+                    <h1 class="model-title" id="activeModelTitle">Breakdown Model</h1>
+                    <span class="model-badge" id="activeModelParamTag">Voltage (V) vs Current (A)</span>
+                </div>
+            </div>
+
+            <!-- SPLIT SCREEN: LEFT vs RIGHT -->
+            <div class="split-layout">
+
+                <!-- LEFT COLUMN: MODEL & CHATBOT -->
+                <div class="col-left">
+
+                    <!-- INPUT & SCREENING CONTROLS -->
+                    <div class="panel">
+                        <div class="panel-head">
+                            <h3>Model Controls</h3>
+                        </div>
+                        <div class="panel-body">
+                            <form id="screeningForm" onsubmit="event.preventDefault(); runModelPipeline();">
+                                <div class="form-grid">
+                                    <div class="field">
+                                        <label for="inputCompId">Component ID</label>
+                                        <input type="text" id="inputCompId" class="input-text"
+                                            value="NASA-IGBT-Part-12">
+                                    </div>
+                                    <div class="field">
+                                        <label for="inputRawX" id="labelRawX">Input Voltage (V)</label>
+                                        <input type="number" step="any" id="inputRawX" class="input-text" value="550.0"
+                                            required onchange="onInputChangeX(this.value)">
+                                    </div>
+                                </div>
+
+                                <div class="field">
+                                    <div class="field-header">
+                                        <span class="field-sublabel">Voltage Slider</span>
+                                        <span class="val-badge" id="sliderValX">550.0 V</span>
+                                    </div>
+                                    <input type="range" id="sliderX" class="range-slider" min="0" max="650" step="1"
+                                        value="550" oninput="onSliderChangeX(this.value)">
+                                </div>
+
+                                <div class="field">
+                                    <label for="inputUserY" id="labelUserY">Measured Current (A)</label>
+                                    <input type="number" step="any" id="inputUserY" class="input-text" value="1.25e-5"
+                                        onchange="onInputChangeY(this.value)">
+                                </div>
+
+                                <div class="field">
+                                    <div class="field-header">
+                                        <span class="field-sublabel">Current Slider</span>
+                                        <span class="val-badge text-orange" id="sliderValY">1.25e-5 A</span>
+                                    </div>
+                                    <input type="range" id="sliderY" class="range-slider slider-orange" min="-9"
+                                        max="-3" step="0.05" value="-4.9" oninput="onSliderChangeY(this.value)">
+                                </div>
+
+                                <!-- Presets -->
+                                <div class="presets-row">
+                                    <span class="presets-title">Presets:</span>
+                                    <div class="presets-buttons" id="modelPresetsContainer"></div>
+                                </div>
+
+                                <button type="submit" class="btn-submit" id="runPipelineBtn">
+                                    Run Screening & Explain
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+
+                    <!-- SCREENING RESULTS & METRICS -->
+                    <div class="panel" id="resultsPanel" style="display:none;">
+                        <div class="panel-head">
+                            <h3>Screening Result</h3>
+                            <span class="verdict-pill" id="riskDecisionBadge">PASS</span>
+                        </div>
+                        <div class="panel-body">
+                            <div class="metrics-grid">
+                                <div class="metric-card">
+                                    <div class="metric-val" id="statRawX">550.0 V</div>
+                                    <div class="metric-key">Input Voltage</div>
+                                </div>
+                                <div class="metric-card">
+                                    <div class="metric-val" id="statScaledX">+546.4 σ</div>
+                                    <div class="metric-key">Normalized Input</div>
+                                </div>
+                                <div class="metric-card border-blue">
+                                    <div class="metric-val text-blue" id="statModelY">3.87e-6 A</div>
+                                    <div class="metric-key" id="lblModelOutput">Model Output (A)</div>
+                                </div>
+                                <div class="metric-card border-orange">
+                                    <div class="metric-val text-orange" id="statUserY">1.25e-5 A</div>
+                                    <div class="metric-key" id="lblUserOutput">Measured Output (A)</div>
+                                </div>
+                                <div class="metric-card">
+                                    <div class="metric-val" id="statPctDiff">+223.0%</div>
+                                    <div class="metric-key">Deviation %</div>
+                                </div>
+                                <div class="metric-card">
+                                    <div class="metric-val" id="statRatio">3.23x</div>
+                                    <div class="metric-key">Ratio</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- AI CHATBOT EXPLAINER -->
+                    <div class="panel chat-panel">
+                        <div class="panel-head">
+                            <h3>AI Diagnostic Chatbot</h3>
+                            <span class="ai-pill">Groq Llama 3.3</span>
+                        </div>
+                        <div class="panel-body chat-scroll" id="chatMessages">
+                            <div class="chat-item bot-item">
+                                <div class="bubble bot-bubble" id="initialBotGreeting">
+                                    <strong>Ready:</strong> Move the test point directly on the graph or adjust values
+                                    to trigger failure physics explanation.
+                                </div>
+                            </div>
+                        </div>
+                        <div class="chat-input-row">
+                            <input type="text" id="interactiveChatInput" class="input-chat"
+                                placeholder="Ask a question..." onkeydown="if(event.key==='Enter') sendChatMessage();">
+                            <button class="btn-chat" onclick="sendChatMessage()">Send</button>
+                        </div>
+                    </div>
+
+                </div>
+
+                <!-- RIGHT COLUMN: DATA DIAGRAMS & VISUALS -->
+                <div class="col-right">
+
+                    <!-- VISUAL 1: SCATTERPLOT -->
+                    <div class="panel">
+                        <div class="panel-head">
+                            <div>
+                                <h3>1. Dataset Scatterplot</h3>
+                                <span class="panel-sub">Click or drag on chart to reposition test point</span>
+                            </div>
+                            <div class="chart-controls">
+                                <button type="button" class="ctrl-btn active" id="btnModeScatterPoint"
+                                    onclick="setChartMode('scatter', 'point')" title="Click/drag to move test point">🎯
+                                    Move Point</button>
+                                <button type="button" class="ctrl-btn" id="btnModeScatterPan"
+                                    onclick="setChartMode('scatter', 'pan')" title="Drag to pan view">🖐️ Pan
+                                    View</button>
+                                <button type="button" class="ctrl-btn" onclick="zoomChart('scatter', 1.25)"
+                                    title="Zoom In">🔍+</button>
+                                <button type="button" class="ctrl-btn" onclick="zoomChart('scatter', 0.8)"
+                                    title="Zoom Out">🔍-</button>
+                                <button type="button" class="ctrl-btn" onclick="resetChartZoom('scatter')"
+                                    title="Reset View">🔄 Reset</button>
+                            </div>
+                        </div>
+                        <div class="panel-body chart-box" id="scatterBox">
+                            <canvas id="scatterplotCanvas"></canvas>
+                        </div>
+                    </div>
+
+                    <!-- VISUAL 2: LINE CHART -->
+                    <div class="panel">
+                        <div class="panel-head">
+                            <div>
+                                <h3>2. Model Regression Curve</h3>
+                                <span class="panel-sub">Click on curve to test specific operating point</span>
+                            </div>
+                            <div class="chart-controls">
+                                <button type="button" class="ctrl-btn active" id="btnModeLinePoint"
+                                    onclick="setChartMode('line', 'point')" title="Click/drag to move test point">🎯
+                                    Move Point</button>
+                                <button type="button" class="ctrl-btn" id="btnModeLinePan"
+                                    onclick="setChartMode('line', 'pan')" title="Drag to pan view">🖐️ Pan View</button>
+                                <button type="button" class="ctrl-btn" onclick="zoomChart('line', 1.25)"
+                                    title="Zoom In">🔍+</button>
+                                <button type="button" class="ctrl-btn" onclick="zoomChart('line', 0.8)"
+                                    title="Zoom Out">🔍-</button>
+                                <button type="button" class="ctrl-btn" onclick="resetChartZoom('line')"
+                                    title="Reset View">🔄 Reset</button>
+                            </div>
+                        </div>
+                        <div class="panel-body chart-box" id="lineBox">
+                            <canvas id="lineChartCanvas"></canvas>
+                        </div>
+                    </div>
+
+                </div>
+
+            </div>
+        </section>
+
+        <!-- ============================================================= -->
+        <!-- VIEW 3: ABOUT US PAGE (TEAM DHRISHTI)                         -->
+        <!-- ============================================================= -->
+        <section id="view-about" class="view-section">
+            <div class="about-wrapper">
+                <button class="back-link" onclick="navigateTo('landing')">&larr; Back to Dashboard</button>
+
+                <!-- HERO BANNER -->
+                <div class="about-hero-card">
+                    <div class="header-badges">
+                        <span class="pill-orange">Team: Dhrishti — Insightful Vision</span>
+                        <span class="pill-blue">Problem ID: SIH26170</span>
+                        <span class="pill-green">Symbiosis Institute of Technology, Pune</span>
+                    </div>
+                    <h1 class="about-main-title">AI-Driven Anomaly Detection in Component Burn-In & Screening</h1>
+                    <p class="about-lead">
+                        Predictive Environmental Stress Screening (ESS) and Latent Defect Detection for Space &
+                        Aerospace High-Reliability Electronics.
+                    </p>
+
+                    <!-- KEY STAT COUNTERS -->
+                    <div class="about-stats-row">
+                        <div class="about-stat-box">
+                            <div class="about-stat-number text-orange">4</div>
+                            <div class="about-stat-label">Intervals (0h, 24h, 96h, 168h)</div>
+                        </div>
+                        <div class="about-stat-box">
+                            <div class="about-stat-number text-blue">125°C</div>
+                            <div class="about-stat-label">Burn-In Thermal Stress</div>
+                        </div>
+                        <div class="about-stat-box">
+                            <div class="about-stat-number text-navy">2</div>
+                            <div class="about-stat-label">Core AI/ML Modules</div>
+                        </div>
+                        <div class="about-stat-box">
+                            <div class="about-stat-number text-green">0%</div>
+                            <div class="about-stat-label">False Negative Tolerance</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 4 SEGREGATED PANELS -->
+                <div class="about-grid">
+
+                    <!-- PANEL 1: PROBLEM STATEMENT & BACKGROUND -->
+                    <div class="panel">
+                        <div class="panel-head">
+                            <h3>1. Background & Problem Statement</h3>
+                            <span class="badge-tag">Context</span>
+                        </div>
+                        <div class="panel-body">
+                            <p class="section-desc">
+                                In high-reliability sectors like space, electronic components undergo rigorous
+                                Environmental Stress Screening (ESS), including Burn-In testing at elevated temperatures
+                                (e.g., 125°C for extended periods like 0h, 24h, 96h, and 168h).
+                            </p>
+                            <div class="callout-box">
+                                <strong>⚠️ The Latent Defect Dilemma:</strong><br>
+                                Traditional screening relies on static parametric pass/fail limits. However, components
+                                that pass absolute datasheet limits often exhibit subtle, anomalous drift over time,
+                                escaping into final flight payloads and causing catastrophic failures.
+                            </div>
+                            <div class="example-box mt-2">
+                                <div class="ex-title">Realistic Screening Example:</div>
+                                <div class="ex-row"><span>• Lot Mean Leakage:</span> <strong>10 μA</strong></div>
+                                <div class="ex-row"><span>• Anomaly Part Leakage:</span> <strong class="text-orange">45
+                                        μA</strong></div>
+                                <div class="ex-row"><span>• Datasheet Max Limit:</span> <strong>50 μA</strong></div>
+                                <div class="ex-note"><em>Technically passes static limits, but is a massive latent
+                                        failure risk!</em></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- PANEL 2: EXPECTED SOLUTION (MODULE A & B) -->
+                    <div class="panel">
+                        <div class="panel-head">
+                            <h3>2. System Architecture & Solution Modules</h3>
+                            <span class="badge-tag">Pipeline</span>
+                        </div>
+                        <div class="panel-body">
+                            <div class="module-card">
+                                <div class="mod-header">
+                                    <span class="mod-icon">🔍</span>
+                                    <div class="mod-title text-orange">Module A: Dynamic Outlier Detection</div>
+                                </div>
+                                <p class="mod-text">
+                                    Static limits catch obvious failures. Module A dynamically compares individual
+                                    component trajectories against the lot population distribution, flagging subtle
+                                    population-relative outliers.
+                                </p>
+                            </div>
+                            <div class="module-card mt-2">
+                                <div class="mod-header">
+                                    <span class="mod-icon">📈</span>
+                                    <div class="mod-title text-blue">Module B: Time-Series Drift Predictor</div>
+                                </div>
+                                <p class="mod-text">
+                                    Predictive regression model that ingests early burn-in data ($Value_{0h}$ and
+                                    $Value_{24h}$) to forecast $Value_{168h}$. If the forecasted drift rate exceeds a
+                                    calculated safety slope, the component is flagged for early rejection.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- PANEL 3: EVALUATION METRICS -->
+                    <div class="panel">
+                        <div class="panel-head">
+                            <h3>3. QA Standards & Evaluation Metrics</h3>
+                            <span class="badge-tag">Standards</span>
+                        </div>
+                        <div class="panel-body">
+                            <div class="eval-item">
+                                <div class="eval-head">🛡️ Anomaly Detection Score</div>
+                                <div class="eval-body">In aerospace mission-critical payloads, missing a defective part
+                                    (False Negative) is catastrophic. The model applies heavy penalization against
+                                    escapes.</div>
+                            </div>
+                            <div class="eval-item mt-2">
+                                <div class="eval-head">📊 Drift Prediction Accuracy</div>
+                                <div class="eval-body">Minimizes Mean Absolute Error (MAE) between the predicted
+                                    $Value_{168h}$ forecast and the actual hidden ground-truth values.</div>
+                            </div>
+                            <div class="eval-item mt-2">
+                                <div class="eval-head">🧠 Physics-Grounded Explainability</div>
+                                <div class="eval-body">Powered by <strong>Groq Llama 3.3</strong>, the system translates
+                                    mathematical deviations into actionable semiconductor physics explanations
+                                    (Avalanche, SRH, $\Delta V_{th}$) for QA inspectors.</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- PANEL 4: TEAM DHRISHTI MEMBERS & PRNs -->
+                    <div class="panel">
+                        <div class="panel-head">
+                            <h3>4. Team Dhrishti — Insightful Vision</h3>
+                            <span class="badge-tag">SIT Pune</span>
+                        </div>
+                        <div class="panel-body">
+                            <div class="team-cards-grid">
+                                <div class="member-card">
+                                    <div class="member-avatar">SB</div>
+                                    <div class="member-info">
+                                        <div class="member-name">Samarth Buchake</div>
+
+                                        <div class="member-prn">PRN: 25070126151</div>
+                                    </div>
+                                </div>
+                                <div class="member-card">
+                                    <div class="member-avatar">VP</div>
+                                    <div class="member-info">
+                                        <div class="member-name">Vibhuti Patil</div>
+
+                                        <div class="member-prn">PRN: 25070126193</div>
+                                    </div>
+                                </div>
+                                <div class="member-card">
+                                    <div class="member-avatar">MK</div>
+                                    <div class="member-info">
+                                        <div class="member-name">Maitreyee Kulkarni</div>
+
+                                        <div class="member-prn">PRN: 24070123058</div>
+                                    </div>
+                                </div>
+                                <div class="member-card">
+                                    <div class="member-avatar">VK</div>
+                                    <div class="member-info">
+                                        <div class="member-name">Varija Korti</div>
+
+                                        <div class="member-prn">PRN: 24070123165</div>
+                                    </div>
+                                </div>
+                                <div class="member-card">
+                                    <div class="member-avatar">KS</div>
+                                    <div class="member-info">
+                                        <div class="member-name">Kaushal Sidhpura</div>
+
+                                        <div class="member-prn">PRN: 25070127093</div>
+                                    </div>
+                                </div>
+                                <div class="member-card">
+                                    <div class="member-avatar">PH</div>
+                                    <div class="member-info">
+                                        <div class="member-name">Prachi Hirve</div>
+
+                                        <div class="member-prn">PRN: 26070126090</div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="inst-tag">Symbiosis Institute of Technology (SIT), Pune</div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Footer (< 11px, right-aligned) -->
+    <footer class="site-footer">
+        <span>This website is vibecoded with assistance from - Google Antigravity</span>
+    </footer>
+
+    <script src="/app.js"></script>
+</body>
+
+</html>

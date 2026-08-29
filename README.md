@@ -1,238 +1,179 @@
-# SIH26170 - AI-Driven Anomaly Detection in Component Burn-In & Screening
-## Internal Round Pipeline and Project Description
+# ⚡ SIH26170 - AI-Driven Anomaly Detection in Component Burn-In & Screening
+### Predictive Environmental Stress Screening for Semiconductor Components
+**Team: Dhrishti - Insightful Vision • Symbiosis Institute of Technology (SIT), Pune • SIH 2026**
 
-## Team Members - SIT Pune
-1. Samarth Buchake
-2. Vibhuti Patil
-3. Maitreyee Kulkarni
-4. Varija Korti
-5. Kaushal Sidhpura
-6. Prachi Hirve
+---
 
-Predictive Environmental Stress Screening for Semiconductor Components
+## 👥 Team Dhrishti — Members & PRNs
+| # | Member Name | PRN / Student ID | Role / Domain |
+| :-: | :--- | :--- | :--- |
+| 1 | **Samarth Buchake** | `25070126151` | Machine Learning & Fullstack Architecture |
+| 2 | **Vibhuti Patil** | `25070126193` | Physics of Failure & Semiconductor Models |
+| 3 | **Maitreyee Kulkarni** | `24070123058` | Data Preprocessing & Statistical Calibration |
+| 4 | **Varija Korti** | `24070123165` | Time-Series Regression & Drift Prediction |
+| 5 | **Kaushal Sidhpura** | `25070127093` | Dynamic Outlier Detection & Anomaly Scoring |
+| 6 | **Prachi Hirve** | `26070126090` | Explainability Engine & QA Diagnostics |
 
-### Overview
+---
 
-This project develops an AI-based Predictive Environmental Stress Screening system to detect latent semiconductor defects before conventional failure limits are exceeded.
+## 📌 Problem Statement & Background (SIH26170)
 
-Traditional screening uses fixed pass/fail limits. Our system additionally learns how components normally behave over time and identifies abnormal drift that may indicate future failure.
+### Background
+In high-reliability sectors (such as space and aerospace), electronic components undergo rigorous **Environmental Stress Screening (ESS)**, including **Burn-In testing** (operating components at elevated temperatures, e.g., 125°C for extended periods like 0h, 24h, 96h, and 168h).
 
-⸻
+### The Latent Defect Problem
+Traditional screening relies on static parametric pass/fail limits. However, **latent defects**—components that pass the absolute limits but exhibit subtle, anomalous drift over time—often escape into final payloads, leading to catastrophic mission failures:
 
-### Problem Statement
+```
+Lot Mean Leakage Current = 10 μA
+Component Leakage Current  = 45 μA
+Datasheet Maximum Limit    = 50 μA (Technically passes, but is a massive latent failure anomaly)
+```
 
-A component can remain within its datasheet limits while showing abnormal degradation.
+---
 
-For example:
+## ⚙️ Solution Architecture & Modules
 
-Lot average leakage current = 10 μA
-Component leakage current  = 45 μA
-Maximum allowed limit       = 50 μA
+### 🔹 Module A: Dynamic Outlier Detection System
+Static limits catch obvious failures. Module A detects population-relative anomalies by comparing individual component trajectories against the lot baseline distribution.
 
-The component technically passes, but its behaviour is significantly different from the healthy population.
+### 🔹 Module B: Time-Series Drift Predictor
+A predictive regression model that takes early burn-in measurements ($\text{Value}_{0h}$ and $\text{Value}_{24h}$) as inputs to forecast $\text{Value}_{168h}$. If the predicted drift rate exceeds a calculated safety slope, the system flags the component for early rejection.
 
-Our system detects this population-relative abnormality and predicts whether the component is likely to degrade further.
+### 🔹 Evaluation & Quality Metrics:
+- **Anomaly Detection Score**: Zero tolerance for False Negatives (missing a defective part is heavily penalized).
+- **Drift Prediction Accuracy**: Minimizes Mean Absolute Error (MAE) on hidden ground truth.
+- **AI Explainability**: Generates physics-grounded justifications for QA inspectors using **Groq Llama 3.3**.
 
-⸻
+## 🏗️ Architecture & Pipeline Flow
 
-### Proposed Pipeline
+```mermaid
+flowchart TD
+    User["Physical Test Bench / User Measurement (Unscaled V & A)"]
+    
+    subgraph Frontend ["Frontend Dashboard (http://localhost:5000)"]
+        Landing["Landing Page (4 Cards: About Us, Breakdown, Leakage IV, Turn-On)"]
+        SplitLeft["Left Panel: Voltage & Current Inputs, Sliders, Groq AI Explainer"]
+        SplitRight["Right Panel: Interactive Draggable Scatterplot & Line Chart"]
+    end
+    
+    subgraph Backend ["Backend Service Layer (backend/app.py)"]
+        Scaler["Feature Auto-Scaler (Z-Score Standardization: X_raw -> X_scaled)"]
+        MLModel["Machine Learning Regression Inference (Y_scaled)"]
+        InverseScale["Inverse Target Transformer (Y_scaled -> Y_phys)"]
+        Discrepancy["Discrepancy Analyzer (Δ, %Δ, Ratio, Trajectory)"]
+        DB[(SQLite Audit DB: backend/data/screening.db)]
+    end
+    
+    subgraph AI ["AI Explainability Engine (models/chatbot.py)"]
+        Groq["Groq Llama 3.3 70B (llama-3.3-70b-versatile)"]
+        Fallback["Built-in Semiconductor Physics Rule Engine (100% Offline Resilience)"]
+    end
 
-Historical Aging Data
-        +
-Experimental Measurements
-        ↓
-Data Preprocessing
-        ↓
-Feature Engineering
-        ↓
-Semi-Supervised Learning
-        ↓
- ┌───────────────────────┐
- │                       │
- ↓                       ↓
-Dynamic Anomaly      Future Drift
-Detection            Prediction
- │                       │
- └───────────┬───────────┘
-             ↓
-      Population Analysis
-             ↓
-        Risk Assessment
-             ↓
-     PASS / HOLD / REJECT
-             ↓
-        Explainability
-             ↓
-    Physical Validation
-             ↓
- Prediction vs Actual Data
-             ↓
-       Model Refinement
+    User --> Landing --> SplitLeft
+    SplitLeft --> Scaler --> MLModel --> InverseScale --> Discrepancy
+    Discrepancy --> Groq --> SplitLeft
+    Discrepancy --> Fallback -.-> SplitLeft
+    Discrepancy --> DB
+    InverseScale --> SplitRight
+```
 
-⸻
+---
 
-### Module A — Dynamic Anomaly Detection
+## 🚀 Quick Start Guide
 
-An Long Short-Term Memory Autoencoder learns normal component behaviour from healthy and largely unlabeled data.
+### 1. Start the Fullstack Web Application (Recommended)
+```bash
+python3 backend/app.py --port 5000
+```
+Open **`http://localhost:5000`** in your browser.
 
-Time-Series Data
-      ↓
-Long Short-Term Memory Autoencoder
-      ↓
-Reconstructed Behaviour
-      ↓
-Reconstruction Error
-      ↓
-Dynamic Anomaly Score
+### 2. Run the Terminal CLI Diagnostic Wizard
+```bash
+python3 models/chatbot.py
+```
 
-This detects components whose value, trajectory or rate of change differs significantly from normal components.
+### 3. Run Interactive Jupyter Notebooks
+```bash
+# Open any model notebook in models/
+models/breakdown.ipynb
+models/leakage.ipynb
+models/turnOn.ipynb
+models/chatbot_demo.ipynb
+```
 
-⸻
+---
 
-### Module B — Future Drift Prediction
+## 🌟 Key Features
 
-Early measurements are used to predict a future parameter value.
+1. **🎨 Clean White Theme with Indian Flag Accents**:
+   - Modern, high-contrast white layout with Saffron Orange (`#ea580c`), Chakra Blue (`#1e40af`), and India Green (`#15803d`) accents.
+   - Minimal, purely functional text with right-aligned footer disclosure.
 
-Initial + Early Measurements
-            ↓
-Time-Series Regression
-            ↓
-Predicted Future Value
-            ↓
-Predicted Drift
-            ↓
-Safety-Slope Comparison
+2. **🎮 Interactive Draggable, Pannable & Zoomable Graphs**:
+   - **Click & Drag on Canvas**: Move the test point marker directly on the **Scatterplot** or **Line Chart** to instantly test any $(X, Y)$ operating condition.
+   - **Pan & Zoom**: Pan view with mouse drag and zoom in/out with the scroll wheel to inspect sub-breakdown knees and threshold regions.
+   - **Live Range Sliders**: Adjust Input Voltage (V) and Measured Current (A) in real-time.
 
-A component can therefore be flagged before reaching a conventional failure limit.
+3. **⚙️ Feature Auto-Scaling**:
+   - Unscaled user inputs (e.g. `550.0 V`) are automatically standardized using calibrated NASA IGBT dataset statistics.
 
-⸻
+4. **⚡ Concise 3-Point AI Failure Diagnostics**:
+   - Powered by **Groq Llama 3.3**, responses are structured in 3 direct bullet points under 100 words:
+     1. **Deviation**: Quantitative drift $\% \Delta$ and ratio.
+     2. **Physics Cause**: Primary semiconductor degradation mechanism (Avalanche breakdown, Shockley-Read-Hall recombination, oxide charge trapping $\Delta V_{th}$, or solder fatigue).
+     3. **Screening Action**: 🟢 **PASS**, 🟡 **HOLD**, or 🔴 **REJECT** verdict with immediate next physical validation step.
 
-Semi-Supervised Learning
+5. **🛡️ 100% Uptime & Zero-Dependency Design**:
+   - Runs out-of-the-box on Python standard library without mandatory pip installs.
+   - Features automatic instant fallback to the built-in physics engine if offline or rate-limited.
 
-Since defective semiconductor samples are difficult to obtain in large quantities, the system uses:
+---
 
-Large Unlabelled Dataset
-          +
-Small Labelled Dataset
-          ↓
-Semi-Supervised Learning
+## 📁 Directory Structure & Map
 
-This allows the model to learn normal behaviour while still using the limited available defect labels.
+```
+SIH 26/
+├── backend/
+│   ├── app.py                # REST API & static web server (port 5000)
+│   ├── pipeline.py           # Master screening orchestrator (Input -> Scale -> Model -> Explain -> DB)
+│   ├── scaler.py             # Feature & target standardization module
+│   ├── model_engine.py       # ML Model inference execution in scaled space
+│   ├── database.py           # SQLite database persistence layer
+│   ├── README.md             # Backend architecture documentation
+│   └── data/
+│       └── screening.db      # SQLite database storing all screening records
+│
+├── frontend/
+│   ├── index.html            # 4-card landing page & split-screen model layout
+│   ├── styles.css            # Clean white theme with Indian flag accents
+│   └── app.js                # SPA routing, interactive Chart.js diagrams & API integration
+│
+├── models/
+│   ├── chatbot.py            # Core Groq / Gemini AI Chatbot & Discrepancy Engine (CLI)
+│   ├── chatbot_helper.py     # Jupyter & Python helper module
+│   ├── chatbot_demo.ipynb    # Interactive demo notebook
+│   ├── models.md             # Detailed models & semiconductor physics documentation
+│   ├── breakdown.ipynb       # Vce vs Ic Breakdown Regression Model
+│   ├── leakage.ipynb         # Applied Voltage vs Leakage Current Model
+│   └── turnOn.ipynb          # Gate Voltage vs Collector Current Model
+│
+├── final_data/
+│   └── dataset/              # Cleaned NASA IGBT accelerated aging CSV datasets
+│       ├── Breakdown.csv
+│       ├── LeakageIV.csv
+│       └── TurnOn.csv
+│
+├── .env                      # API keys (GROQ_API_KEY)
+├── .gitignore                # Git ignore rules protecting .env and database
+├── README.md                 # Project overview and architecture (This file)
+├── walkthrough.md            # Step-by-step user and setup walkthrough
+└── api.md                    # Comprehensive REST API reference
+```
 
-⸻
+---
 
-### Risk Assessment
-
-The final decision combines:
-
-* Static engineering limits
-* Dynamic anomaly score
-* Predicted future value
-* Drift slope
-* Population deviation
-* Thermal behaviour
-
-             Risk Assessment
-                    ↓
-        ┌───────────┼───────────┐
-        ↓           ↓           ↓
-      PASS        HOLD       REJECT
-     Low Risk   Review      High Risk
-
-⸻
-
-### Explainability
-
-Each decision should provide a clear reason.
-
-Example:
-
-Component: C-104
-Decision: HOLD
-High dynamic anomaly score
-High predicted future drift
-Large deviation from healthy population
-Main indicators:
-• Increasing leakage
-• Increasing on-state voltage
-• Abnormal temperature-adjusted behaviour
-
-⸻
-
-### Physical Validation
-
-The trained model is ultimately tested using measurements from physical semiconductor components.
-
-Trained Model
-     ↓
-Physical Measurements
-     ↓
-Real-Time Prediction
-     ↓
-PASS / HOLD / REJECT
-     ↓
-Later Actual Measurements
-     ↓
-Prediction vs Actual Behaviour
-
-This provides real-world validation rather than relying only on dataset accuracy.
-
-⸻
-
-### Evaluation
-
-Anomaly Detection
-
-* Recall
-* False-negative rate
-* Precision
-* F1-score
-* Precision-recall area under the curve
-
-Drift Prediction
-
-* Mean Absolute Error
-* Root Mean Squared Error
-* Coefficient of determination
-
-Explainability
-
-Identify which parameters caused the warning and why the component was classified as risky.
-
-⸻
-
-### Differentiating Factor
-
-A predictive screening system combining semi-supervised temporal learning, dynamic population-relative anomaly detection, future degradation prediction, explainable risk assessment and physical validation.
-
-The key shift is:
-
-Traditional ESS:
-“Has the component crossed the limit?”
-
-Our system:
-“Is the component behaving abnormally, where is it heading, and should it be screened before failure?”
-
-⸻
-
-### Expected Outcome
-
-Historical Data
-      ↓
-AI Training
-      ↓
-Anomaly Detection
-      +
-Drift Prediction
-      ↓
-Risk Assessment
-      ↓
-PASS / HOLD / REJECT
-      ↓
-Explainable Report
-      ↓
-Physical Validation
-      ↓
-Improved Model
-
-Target Applications: Aerospace, space systems, defense electronics and other high-reliability electronic systems.
+## 📚 Further Documentation
+- 📖 [**Walkthrough Guide**](file:///Users/samarth/Documents/SIH%2026/walkthrough.md) — Comprehensive user and setup guide.
+- 🌐 [**API Reference**](file:///Users/samarth/Documents/SIH%2026/api.md) — REST API endpoints, schemas, and payloads.
+- 🔬 [**Physics & Models Doc**](file:///Users/samarth/Documents/SIH%2026/models/models.md) — Mathematical formulas and semiconductor failure mechanisms.
