@@ -32,6 +32,7 @@
         </div>
         <nav class="nav-links">
             <button class="nav-btn active" id="nav-landing" onclick="navigateTo('landing')">Home</button>
+            <button class="nav-btn" id="nav-outlier" onclick="navigateTo('outlier')">Dynamic Outliers</button>
             <button class="nav-btn" id="nav-breakdown" onclick="loadModelPage('breakdown')">Breakdown</button>
             <button class="nav-btn" id="nav-leakage" onclick="loadModelPage('leakage')">Leakage IV</button>
             <button class="nav-btn" id="nav-turnon" onclick="loadModelPage('turnon')">Turn-On</button>
@@ -47,26 +48,24 @@
     <main class="main-content">
 
         <!-- ============================================================= -->
-        <!-- VIEW 1: LANDING PAGE (4 CARDS)                                -->
+        <!-- VIEW 1: LANDING PAGE (5 CARDS)                                -->
         <!-- ============================================================= -->
         <section id="view-landing" class="view-section active">
             <div class="hero-container">
                 <h1 class="hero-heading">Semiconductor Stress Screening & Anomaly Detection</h1>
-                <p class="hero-subheading">Select a model to evaluate component measurements, view dataset curves, and
-                    generate AI failure diagnostics.</p>
+                <p class="hero-subheading">Select a physics model or dynamic outlier system to evaluate component measurements, analyze full I-V sweep curves, and generate AI diagnostics.</p>
             </div>
 
-            <!-- 4 CARDS -->
+            <!-- 4 CARDS GRID -->
             <div class="cards-grid">
-                <!-- CARD 1: ABOUT US -->
-                <div class="dash-card card-about" onclick="navigateTo('about')">
-                    <div class="card-header-bar bar-orange"></div>
+                <!-- CARD 1: DYNAMIC OUTLIER DETECTION SYSTEM -->
+                <div class="dash-card card-featured" onclick="navigateTo('outlier')">
+                    <div class="card-header-bar bar-purple"></div>
                     <div class="card-body">
-                        <div class="card-icon-box icon-orange">👥</div>
-                        <h2 class="card-heading">About Us</h2>
-                        <p class="card-text">Team Drishti overview, screening pipeline, and official SIH26170 problem
-                            statement.</p>
-                        <span class="card-action text-orange">View Details &rarr;</span>
+                        <div class="card-icon-box icon-purple">🎯</div>
+                        <h2 class="card-heading">Dynamic Outlier Detection System</h2>
+                        <p class="card-text">Full Curve-Level Population Anomaly Detection across 17 morphometric & electrical features. Dual-layer score fusion (Robust IQR Dynamic Score + Isolation Forest ML).</p>
+                        <span class="card-action text-purple">Launch Outlier Engine &rarr;</span>
                     </div>
                 </div>
 
@@ -76,8 +75,7 @@
                     <div class="card-body">
                         <div class="card-icon-box icon-blue">⚡</div>
                         <h2 class="card-heading">Time-Series & Breakdown</h2>
-                        <p class="card-text">Collector-Emitter Voltage (V) vs Leakage Current (microAmpere). Time-series
-                            degradation forecasting & avalanche breakdown prediction.</p>
+                        <p class="card-text">Collector-Emitter Voltage (V) vs Leakage Current (microAmpere). Time-series degradation forecasting & avalanche breakdown prediction.</p>
                         <span class="card-action text-blue">Open Model &rarr;</span>
                     </div>
                 </div>
@@ -88,8 +86,7 @@
                     <div class="card-body">
                         <div class="card-icon-box icon-green">🔍</div>
                         <h2 class="card-heading">Leakage IV Model</h2>
-                        <p class="card-text">Applied Voltage (V) vs Leakage Current (microAmpere). Detects
-                            Shockley-Read-Hall deep-level generation.</p>
+                        <p class="card-text">Applied Voltage (V) vs Leakage Current (microAmpere). Detects Shockley-Read-Hall deep-level generation.</p>
                         <span class="card-action text-green">Open Model &rarr;</span>
                     </div>
                 </div>
@@ -100,8 +97,7 @@
                     <div class="card-body">
                         <div class="card-icon-box icon-navy">🔄</div>
                         <h2 class="card-heading">Turn-On Model</h2>
-                        <p class="card-text">Gate Voltage (V) vs Collector Current (microAmpere). Detects positive
-                            threshold voltage shift.</p>
+                        <p class="card-text">Gate Voltage (V) vs Collector Current (microAmpere). Detects positive threshold voltage shift.</p>
                         <span class="card-action text-navy">Open Model &rarr;</span>
                     </div>
                 </div>
@@ -248,9 +244,21 @@
                             <div class="panel-title-wrap">
                                 <h3>🤖 AI Failure Physics & Explainability</h3>
                             </div>
-                            <span class="ai-report-badge" id="reportEngineBadge">Groq Llama 3.3 Active</span>
+                            <div class="llm-topright-badge" id="reportEngineBadge" title="Connected LLM Provider & Architecture">
+                                <span class="pulse-indicator"></span>
+                                <span class="badge-provider">Groq</span>
+                                <span class="badge-dot">•</span>
+                                <span class="badge-model" id="modelLlmModelText">Llama 3.3 70B Versatile</span>
+                            </div>
                         </div>
-                        <div class="panel-body">
+                        <div class="panel-body" style="padding-bottom: 10px;">
+
+                            <!-- Quick Suggestion Prompts -->
+                            <div class="ai-quick-prompts" style="border-radius: 6px; margin-bottom: 10px; border: 1px solid var(--border);">
+                                <button type="button" class="prompt-chip" onclick="setInlineModelPrompt('Explain the exact physics behind this leakage deviation.')">⚡ Leakage Physics</button>
+                                <button type="button" class="prompt-chip" onclick="setInlineModelPrompt('Is this defect caused by impact ionization or trap recombination?')">🔬 Impact Ionization vs SRH</button>
+                                <button type="button" class="prompt-chip" onclick="setInlineModelPrompt('What is the recommended NASA screening action for this residual?')">🛰️ Screening Action</button>
+                            </div>
 
                             <!-- Explainability Content (Deviation + Physical Cause + Next Action) -->
                             <div class="ai-report-content" id="aiReportText">
@@ -325,6 +333,229 @@
                         </div>
                         <div class="panel-body chart-box" id="voltageBox" style="min-height: 240px;">
                             <canvas id="tsVoltageCanvas"></canvas>
+                        </div>
+                    </div>
+
+                </div>
+
+            </div>
+        </section>
+
+        <!-- ============================================================= -->
+        <!-- VIEW 2.5: DYNAMIC OUTLIER DETECTION SYSTEM VIEW               -->
+        <!-- Full Curve Population Anomaly Detection & 17 Feature Scoring  -->
+        <!-- ============================================================= -->
+        <section id="view-outlier" class="view-section">
+
+            <!-- OUTLIER HEADER BAR (Back Link + Title + Param Badge + Segmented Control) -->
+            <div class="model-topbar" style="flex-direction: row; justify-content: space-between; align-items: center; flex-wrap: wrap;">
+                <div class="model-topbar-left">
+                    <button class="back-link" onclick="navigateTo('landing')">&larr; Back to Dashboard</button>
+                    <div class="model-title-wrap">
+                        <h1 class="model-title" id="outlierTitle">Dynamic Outlier Detection System</h1>
+                        <span class="model-badge" id="outlierHeaderBadge">17-Feature Morphometry • Dual-Layer Score Fusion</span>
+                    </div>
+                </div>
+                <div class="model-topbar-right">
+                    <div class="segmented-control">
+                        <button type="button" class="seg-btn active" id="tabOutlierBreakdown" onclick="selectOutlierModel('breakdown')">Breakdown (Vce-Ic)</button>
+                        <button type="button" class="seg-btn" id="tabOutlierLeakage" onclick="selectOutlierModel('leakage')">Leakage IV (V-Ileak)</button>
+                        <button type="button" class="seg-btn" id="tabOutlierTurnon" onclick="selectOutlierModel('turnon')">Turn-On (Vge-Ic)</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SPLIT SCREEN: LEFT CONTROLS/DECISION vs RIGHT VISUALIZATIONS -->
+            <div class="split-layout">
+
+                <!-- LEFT COLUMN: CONTROLS & SCREENING VERDICT -->
+                <div class="col-left">
+
+                    <!-- 1. MODEL CONTROLS PANEL -->
+                    <div class="panel">
+                        <div class="panel-head">
+                            <h3>Model Controls</h3>
+                        </div>
+                        <div class="panel-body">
+                            <form id="outlierForm" onsubmit="event.preventDefault(); runOutlierDetection();">
+                                
+                                <div class="field">
+                                    <label for="outlierCompId">Component DUT Identifier</label>
+                                    <input type="text" id="outlierCompId" class="input-text" value="NASA-IGBT-DUT-09" required>
+                                </div>
+
+                                <!-- Presets Row with Chip Buttons -->
+                                <div class="presets-row">
+                                    <span class="presets-title">PRESETS:</span>
+                                    <div class="presets-buttons" id="outlierPresetButtons">
+                                        <button type="button" class="preset-btn active" id="presetBtn9" onclick="applyOutlierPreset('9')">Curve 9 (Critical Anomaly)</button>
+                                        <button type="button" class="preset-btn" id="presetBtn8" onclick="applyOutlierPreset('8')">Curve 8 (Premature Knee)</button>
+                                        <button type="button" class="preset-btn" id="presetBtn2" onclick="applyOutlierPreset('2')">Curve 2 (Leakage Drift)</button>
+                                        <button type="button" class="preset-btn" id="presetBtn0" onclick="applyOutlierPreset('0')">Curve 0 (Pristine)</button>
+                                        <button type="button" class="preset-btn" id="presetBtnCustom" onclick="applyOutlierPreset('custom')">⚡ Custom</button>
+                                    </div>
+                                </div>
+
+                                <!-- Custom coordinates drawer (hidden by default unless custom is selected) -->
+                                <div id="customCurveArea" class="field" style="display: none; margin-top: 8px;">
+                                    <label for="customCoordsInput">Custom Sweep Coordinates (JSON or CSV)</label>
+                                    <textarea id="customCoordsInput" class="input-text" rows="3" placeholder='{"x": [2.0, 3.5, 5.1], "y": [0.005, 0.08, 14.5]}'></textarea>
+                                </div>
+
+                                <button type="submit" class="btn-submit" id="btnRunOutlier" style="margin-top: 10px;">
+                                    Run Outlier Screening & Explain
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+
+                    <!-- 2. SCREENING HEALTH DECISION & METRICS -->
+                    <div class="panel" id="outlierVerdictPanel">
+                        <div class="panel-head">
+                            <div class="panel-title-wrap">
+                                <h3>Screening Verdict</h3>
+                            </div>
+                            <span class="verdict-pill badge-reject" id="outlierVerdictBadge">REJECT</span>
+                        </div>
+                        <div class="panel-body">
+                            <!-- 4-Metric Grid -->
+                            <div class="metrics-grid">
+                                <div class="metric-card border-purple">
+                                    <div class="metric-val text-purple" id="statCombinedScore">2.20</div>
+                                    <div class="metric-key">Combined Score</div>
+                                </div>
+                                <div class="metric-card border-orange">
+                                    <div class="metric-val text-orange" id="statDynamicScore">31.12</div>
+                                    <div class="metric-key">Dynamic Score (θ = <span id="statDynamicThresh">8.08</span>)</div>
+                                </div>
+                                <div class="metric-card border-blue">
+                                    <div class="metric-val text-blue" id="statIsolationScore">ANOMALY</div>
+                                    <div class="metric-key">Isolation Forest ML</div>
+                                </div>
+                                <div class="metric-card border-navy">
+                                    <div class="metric-val text-navy" id="statOutlierCount">3</div>
+                                    <div class="metric-key">Outlier Features (|z| ≥ 3.5)</div>
+                                </div>
+                            </div>
+
+                            <!-- Top Outlier Features Pills Row -->
+                            <div class="outlier-pills-wrap mt-2">
+                                <span class="outlier-pills-title">TRIGGER FEATURES:</span>
+                                <div id="outlierTriggerPills" class="outlier-pills-list">
+                                    <span class="tag-pill tag-red">max_current (809.4M σ)</span>
+                                    <span class="tag-pill tag-red">curve_area (32.8 σ)</span>
+                                    <span class="tag-pill tag-red">max_slope (6.7 σ)</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+
+                <!-- RIGHT COLUMN: AI EXPLAINABILITY (TOP) + 2 VISUALS + TABLE (BELOW) -->
+                <div class="col-right">
+
+                    <!-- 1. AI EXPLAINABILITY & FAILURE PHYSICS DIAGNOSTIC CARD (TOP) -->
+                    <div class="panel" id="cardOutlierAIExplainability">
+                        <div class="panel-head">
+                            <div class="panel-title-wrap">
+                                <h3>🤖 AI Failure Physics & Explainability</h3>
+                            </div>
+                            <div class="llm-topright-badge" id="outlierReportEngineBadge" title="Connected LLM Provider & Architecture">
+                                <span class="pulse-indicator"></span>
+                                <span class="badge-provider">Groq</span>
+                                <span class="badge-dot">•</span>
+                                <span class="badge-model" id="outlierLlmModelText">Llama 3.3 70B Versatile</span>
+                            </div>
+                        </div>
+                        <div class="panel-body" style="padding-bottom: 10px;">
+
+                            <!-- Quick Suggestion Prompts -->
+                            <div class="ai-quick-prompts" style="border-radius: 6px; margin-bottom: 10px; border: 1px solid var(--border);">
+                                <button type="button" class="prompt-chip" onclick="setInlineOutlierPrompt('Explain why this curve is classified as an anomaly.')">🎯 Anomaly Cause</button>
+                                <button type="button" class="prompt-chip" onclick="setInlineOutlierPrompt('What do the highest robust z-score trigger features indicate?')">📊 Top Z-Scores</button>
+                                <button type="button" class="prompt-chip" onclick="setInlineOutlierPrompt('Explain the physical difference between nominal and avalanche runaway curves.')">⚡ Avalanche Physics</button>
+                            </div>
+
+                            <!-- Explainability Content -->
+                            <div class="ai-report-content" id="outlierAiReport">
+                                <div style="background: #f8fafc; border: 1px solid var(--border); padding: 10px 12px; border-radius: 6px; font-size: 0.84rem; color: #334155; line-height: 1.5;">
+                                    <strong>Status:</strong> Select a sweep curve or click <em>Run Outlier Screening & Explain</em> to generate failure physics diagnostics.
+                                </div>
+                            </div>
+
+                            <!-- Integrated Interactive Chat Bar -->
+                            <div class="chat-inline-row" style="margin-top: 10px; display: flex; gap: 8px;">
+                                <input type="text" id="outlierInlineChatInput" class="input-text"
+                                    placeholder="Ask AI about this curve anomaly or failure physics..."
+                                    style="flex: 1; font-size: 0.84rem; padding: 7px 10px;"
+                                    onkeydown="if(event.key==='Enter') sendOutlierInlineChat()">
+                                <button type="button" class="btn-chat-send" onclick="sendOutlierInlineChat()"
+                                    style="background: var(--chakra-navy); color: #fff; border: none; padding: 7px 16px; border-radius: 6px; font-weight: 700; cursor: pointer; font-size: 0.84rem;">
+                                    Ask AI
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- VISUAL 1: FULL SWEEP CURVE WITH POPULATION CONTEXT -->
+                    <div class="panel visual-card">
+                        <div class="panel-head">
+                            <div>
+                                <h3 id="outlierVisual1Title">1. Full Sweep Curve with Population Context</h3>
+                                <span class="panel-sub">19 NASA baseline sweeps in background • Tested DUT sweep highlighted</span>
+                            </div>
+                            <div class="chart-controls">
+                                <button type="button" class="ctrl-btn" onclick="zoomChart('outlierCurve', 1.25)" title="Zoom In">🔍+</button>
+                                <button type="button" class="ctrl-btn" onclick="zoomChart('outlierCurve', 0.8)" title="Zoom Out">🔍-</button>
+                                <button type="button" class="ctrl-btn" onclick="resetChartZoom('outlierCurve')" title="Reset View">🔄 Reset</button>
+                            </div>
+                        </div>
+                        <div class="panel-body chart-box" style="min-height: 270px;">
+                            <canvas id="outlierCurveCanvas"></canvas>
+                        </div>
+                    </div>
+
+                    <!-- VISUAL 2: 17-FEATURE ROBUST ANOMALY DEVIATION -->
+                    <div class="panel visual-card">
+                        <div class="panel-head">
+                            <div>
+                                <h3>2. 17-Feature Robust Anomaly Deviation (|z| Z-Scores)</h3>
+                                <span class="panel-sub">Robust IQR deviation from population median • Red dashed line = +3.5σ Threshold</span>
+                            </div>
+                            <div class="chart-controls">
+                                <button type="button" class="ctrl-btn" onclick="resetChartZoom('outlierFeatures')" title="Reset View">🔄 Reset</button>
+                            </div>
+                        </div>
+                        <div class="panel-body chart-box" style="min-height: 250px;">
+                            <canvas id="outlierFeaturesCanvas"></canvas>
+                        </div>
+                    </div>
+
+                    <!-- 3. 17 MORPHOMETRIC & ELECTRICAL FEATURES BREAKDOWN TABLE -->
+                    <div class="panel">
+                        <div class="panel-head">
+                            <div class="panel-title-wrap">
+                                <h3>3. 17 Morphometric & Electrical Features Breakdown</h3>
+                            </div>
+                            <span class="badge-tag" id="outlierTableBadge">17 Features Extracted</span>
+                        </div>
+                        <div class="panel-body" style="padding: 0; overflow-x: auto; max-height: 300px;">
+                            <table class="outlier-table">
+                                <thead>
+                                    <tr>
+                                        <th>Feature</th>
+                                        <th>Extracted Value</th>
+                                        <th>Lot Median</th>
+                                        <th>Lot MAD</th>
+                                        <th>Robust Z-Score</th>
+                                        <th>Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="outlierTableBody">
+                                    <!-- Dynamic Rows Injected by JS -->
+                                </tbody>
+                            </table>
                         </div>
                     </div>
 
@@ -518,21 +749,44 @@
         <!-- Collapsible Drawer Panel -->
         <div id="aiDrawerPanel" class="ai-drawer-panel" style="display: none;">
             <div class="ai-drawer-header">
-                <div class="ai-drawer-title-wrap">
-                    <span class="ai-drawer-icon">🤖</span>
-                    <div>
-                        <div class="ai-drawer-title">Drishti AI Diagnostics</div>
-                        <div class="ai-drawer-subtitle" id="chatEnginePill">Groq Llama 3.3 Active</div>
+                <!-- Top Row: Title + Controls -->
+                <div class="ai-drawer-top-row">
+                    <div class="ai-drawer-title-wrap">
+                        <span class="ai-drawer-icon">🤖</span>
+                        <span class="ai-drawer-title">Drishti AI Diagnostics</span>
+                    </div>
+                    <div class="ai-drawer-top-actions">
+                        <button type="button" class="ai-drawer-btn-action" onclick="clearAIChat()" title="Clear / Reset Conversation">🧹</button>
+                        <button type="button" class="ai-drawer-close" onclick="toggleAIChat()" title="Minimize Window">✕</button>
                     </div>
                 </div>
-                <button type="button" class="ai-drawer-close" onclick="toggleAIChat()" title="Minimize Chat">✕</button>
+
+                <!-- Sub Row: Physics Engine Subtitle + Connected LLM Pill -->
+                <div class="ai-drawer-sub-row">
+                    <span class="ai-drawer-sub-text">Semiconductor Physics Core</span>
+                    <div class="ai-llm-connected-pill" id="floatingLlmBadge" title="Active Large Language Model">
+                        <span class="pulse-indicator"></span>
+                        <span class="llm-pill-provider">Groq LPU</span>
+                        <span class="llm-pill-sep">•</span>
+                        <span class="llm-pill-model" id="drawerLlmModelText">Llama 3.3 70B</span>
+                    </div>
+                </div>
             </div>
+
+            <!-- Quick Suggestion Prompts -->
+            <div class="ai-quick-prompts">
+                <button type="button" class="prompt-chip" onclick="sendQuickChatMessage('Explain avalanche breakdown multiplication.')">⚡ Avalanche</button>
+                <button type="button" class="prompt-chip" onclick="sendQuickChatMessage('How does SRH recombination cause sub-threshold leakage?')">🔬 SRH Trap</button>
+                <button type="button" class="prompt-chip" onclick="sendQuickChatMessage('What is the decision policy for PASS vs HOLD vs REJECT?')">📋 Policies</button>
+                <button type="button" class="prompt-chip" onclick="sendQuickChatMessage('Explain 17 morphometric feature extraction in dynamic outlier system.')">📈 17 Features</button>
+            </div>
+
             <div class="ai-drawer-body chat-scroll" id="chatMessages">
                 <!-- Live Dynamic Messages -->
             </div>
             <div class="ai-drawer-footer">
                 <input type="text" id="interactiveChatInput" class="input-chat"
-                    placeholder="Ask Drishti AI about physics..."
+                    placeholder="Ask Drishti AI about semiconductor physics..."
                     onkeydown="if(event.key==='Enter') sendChatMessage();">
                 <button class="btn-chat" onclick="sendChatMessage()">Send</button>
             </div>

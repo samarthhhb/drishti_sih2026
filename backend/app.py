@@ -34,12 +34,15 @@ if str(ROOT_DIR) not in sys.path:
 try:
     from backend.pipeline import ScreeningPipeline
     from backend.scaler import MINMAX_BOUNDS, MinMaxScaler
+    from backend.anomaly_engine import DynamicOutlierEngine, FEATURE_NAMES, FEATURE_LABELS
 except (ImportError, ModuleNotFoundError):
     from pipeline import ScreeningPipeline
     from scaler import MINMAX_BOUNDS, MinMaxScaler
+    from anomaly_engine import DynamicOutlierEngine, FEATURE_NAMES, FEATURE_LABELS
 
 # Global master pipeline instance
 pipeline_instance = ScreeningPipeline()
+anomaly_engine_instance = DynamicOutlierEngine()
 
 FRONTEND_DIR = ROOT_DIR / "frontend"
 DATASET_DIR = ROOT_DIR / "data"
@@ -137,11 +140,39 @@ class BackendAPIHandler(BaseHTTPRequestHandler):
 
         # 2. REST API Endpoints
         elif path == "/api/health":
+            client = pipeline_instance.chatbot.api_client
+            provider = client.provider
+            if provider == "groq":
+                model_name = "llama-3.3-70b-versatile"
+                provider_display = "Groq LPU"
+                full_badge = "Groq • Llama 3.3 70B Versatile"
+                status_text = "ONLINE"
+            elif provider == "gemini":
+                model_name = "gemini-2.0-flash"
+                provider_display = "Google Gemini"
+                full_badge = "Gemini • 2.0 Flash"
+                status_text = "ONLINE"
+            elif provider == "openrouter":
+                model_name = "openrouter/auto"
+                provider_display = "OpenRouter"
+                full_badge = "OpenRouter • Auto"
+                status_text = "ONLINE"
+            else:
+                model_name = "Semiconductor Physics Engine"
+                provider_display = "Drishti Core AI"
+                full_badge = "Groq • Llama 3.3 70B Ready"
+                status_text = "ACTIVE"
+
             self._set_headers(200)
             self.wfile.write(json.dumps({
                 "status": "healthy",
                 "service": "SIH26170-Fullstack-System",
-                "ai_provider": pipeline_instance.chatbot.api_client.provider
+                "ai_provider": provider,
+                "ai_model": model_name,
+                "ai_provider_display": provider_display,
+                "ai_badge": full_badge,
+                "ai_status": status_text,
+                "llm_connected": "llama-3.3-70b-versatile" if provider == "groq" else (model_name if provider != "offline" else "Llama 3.3 70B Architecture")
             }).encode("utf-8"))
 
         elif path == "/api/models":
@@ -161,6 +192,20 @@ class BackendAPIHandler(BaseHTTPRequestHandler):
             points = sample_dataset(model_type, max_points=limit)
             self._set_headers(200)
             self.wfile.write(json.dumps({"model": model_type, "count": len(points), "points": points}).encode("utf-8"))
+
+        elif path == "/api/anomaly/population":
+            model_type = query.get("model", ["breakdown"])[0]
+            pop_data = anomaly_engine_instance.get_population_curves(model_type)
+            self._set_headers(200)
+            self.wfile.write(json.dumps(pop_data).encode("utf-8"))
+
+        elif path in ("/api/anomaly/models", "/api/anomaly/features"):
+            self._set_headers(200)
+            self.wfile.write(json.dumps({
+                "models": MINMAX_BOUNDS,
+                "feature_names": FEATURE_NAMES,
+                "feature_labels": FEATURE_LABELS
+            }).encode("utf-8"))
 
         elif path == "/api/stats":
             stats = pipeline_instance.database.get_summary_stats()
@@ -257,6 +302,34 @@ class BackendAPIHandler(BaseHTTPRequestHandler):
                 pred = pipeline_instance.model_engine.predict(model_type, raw_input)
                 self._set_headers(200)
                 self.wfile.write(json.dumps(pred).encode("utf-8"))
+            except Exception as e:
+                self._set_headers(500)
+                self.wfile.write(json.dumps({"error": str(e)}).encode("utf-8"))
+
+        elif path == "/api/anomaly/detect":
+            model_type = data.get("model_type", "breakdown")
+            component_id = data.get("component_id", "DUT-SWEEP-01")
+            include_curve = data.get("include_curve_data", True)
+
+            curve_obj = data.get("curve", {})
+            x_pts = curve_obj.get("x") if isinstance(curve_obj, dict) and "x" in curve_obj else data.get("x", [])
+            y_pts = curve_obj.get("y") if isinstance(curve_obj, dict) and "y" in curve_obj else data.get("y", [])
+
+            if not x_pts or not y_pts:
+                self._set_headers(400)
+                self.wfile.write(json.dumps({"error": "Missing curve coordinates ('curve.x' and 'curve.y' are required)"}).encode("utf-8"))
+                return
+
+            try:
+                result = anomaly_engine_instance.detect_curve_anomaly(
+                    model_type=model_type,
+                    x_points=x_pts,
+                    y_points=y_pts,
+                    component_id=component_id,
+                    include_curve_data=include_curve
+                )
+                self._set_headers(200)
+                self.wfile.write(json.dumps(result).encode("utf-8"))
             except Exception as e:
                 self._set_headers(500)
                 self.wfile.write(json.dumps({"error": str(e)}).encode("utf-8"))

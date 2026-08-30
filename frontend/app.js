@@ -107,6 +107,7 @@ let simulationInterval = null;
 
 function toggleAIChat(forceOpen) {
     const drawer = document.getElementById("aiDrawerPanel");
+    const fab = document.getElementById("aiFabBtn");
     const badge = document.getElementById("aiUnreadBadge");
     if (!drawer) return;
 
@@ -115,13 +116,74 @@ function toggleAIChat(forceOpen) {
 
     if (shouldOpen) {
         drawer.style.display = "flex";
+        if (fab) fab.style.display = "none";
         if (badge) badge.style.display = "none";
         const chatBox = document.getElementById("chatMessages");
-        if (chatBox) chatBox.scrollTop = chatBox.scrollHeight;
+        if (chatBox) {
+            if (chatBox.children.length === 0) {
+                clearAIChat();
+            }
+            chatBox.scrollTop = chatBox.scrollHeight;
+        }
         const input = document.getElementById("interactiveChatInput");
         if (input) setTimeout(() => input.focus(), 150);
     } else {
         drawer.style.display = "none";
+        if (fab) fab.style.display = "flex";
+    }
+}
+
+function clearAIChat() {
+    const chat = document.getElementById("chatMessages");
+    if (!chat) return;
+    chat.innerHTML = `
+        <div class="ai-welcome-card">
+            <div class="welcome-badge">🤖 DRISHTI AI DIAGNOSTICS ONLINE</div>
+            <div class="welcome-model-spec">Connected LLM: <strong>Groq • Llama 3.3 70B Versatile</strong></div>
+            <p class="welcome-desc">Physics-grounded reasoning for semiconductor degradation, accelerated thermal aging, avalanche breakdown, and NASA EEE-INST-002 screening standards.</p>
+            <div class="welcome-grid">
+                <div class="welcome-feature-card" onclick="sendQuickChatMessage('Explain avalanche breakdown multiplication vs thermal runaway.')">
+                    <span class="wf-icon">⚡</span>
+                    <div><strong>Avalanche Breakdown</strong><p>Impact ionization & field multiplication</p></div>
+                </div>
+                <div class="welcome-feature-card" onclick="sendQuickChatMessage('How does SRH recombination cause sub-threshold leakage?')">
+                    <span class="wf-icon">🔬</span>
+                    <div><strong>SRH Recombination</strong><p>Deep-level carrier trap dynamics</p></div>
+                </div>
+                <div class="welcome-feature-card" onclick="sendQuickChatMessage('What is the decision policy for PASS vs HOLD vs REJECT in SIH 26170?')">
+                    <span class="wf-icon">📋</span>
+                    <div><strong>Screening Policy</strong><p>Flight PASS/HOLD/REJECT criteria</p></div>
+                </div>
+                <div class="welcome-feature-card" onclick="sendQuickChatMessage('Explain 17 morphometric feature extraction in dynamic outlier system.')">
+                    <span class="wf-icon">📈</span>
+                    <div><strong>17 Feature Morphology</strong><p>Curve-level IQR & Isolation Forest</p></div>
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+function setInlineModelPrompt(promptText) {
+    const input = document.getElementById("modelInlineChatInput");
+    if (input) {
+        input.value = promptText;
+        sendModelInlineChat();
+    }
+}
+
+function setInlineOutlierPrompt(promptText) {
+    const input = document.getElementById("outlierInlineChatInput");
+    if (input) {
+        input.value = promptText;
+        sendOutlierInlineChat();
+    }
+}
+
+function sendQuickChatMessage(promptText) {
+    const input = document.getElementById("interactiveChatInput");
+    if (input) {
+        input.value = promptText;
+        sendChatMessage();
     }
 }
 
@@ -133,13 +195,33 @@ async function fetchSystemHealth() {
     try {
         const res = await fetch("/api/health");
         const data = await res.json();
-        const badge = document.getElementById("engineText");
-        const pill = document.getElementById("chatEnginePill");
-
         if (data.status === "healthy") {
-            const providerStr = data.active_llm || (data.ai_provider ? data.ai_provider.toUpperCase() : "Online");
-            if (badge) badge.textContent = providerStr;
-            if (pill) pill.textContent = providerStr;
+            let modelDisplay = "Llama 3.3 70B";
+            if (data.ai_model) {
+                if (data.ai_model.toLowerCase().includes("llama")) {
+                    modelDisplay = "Llama 3.3 70B";
+                } else if (data.ai_model.toLowerCase().includes("gemini")) {
+                    modelDisplay = "Gemini 2.0 Flash";
+                } else {
+                    modelDisplay = data.ai_model;
+                }
+            }
+
+            // Update top bar health indicator
+            const engineText = document.getElementById("engineText");
+            if (engineText) engineText.textContent = "API: Online • " + (data.ai_provider ? data.ai_provider.toUpperCase() : "GROQ");
+
+            // Update Floating Drawer LLM Pill
+            const drawerLlm = document.getElementById("drawerLlmModelText");
+            if (drawerLlm) drawerLlm.textContent = modelDisplay;
+
+            // Update Model Card LLM Badge
+            const modelCardLlm = document.getElementById("modelLlmModelText");
+            if (modelCardLlm) modelCardLlm.textContent = modelDisplay + " Versatile";
+
+            // Update Outlier Card LLM Badge
+            const outlierCardLlm = document.getElementById("outlierLlmModelText");
+            if (outlierCardLlm) outlierCardLlm.textContent = modelDisplay + " Versatile";
         }
     } catch (err) {
         console.warn("Could not query /api/health:", err);
@@ -157,6 +239,11 @@ function navigateTo(viewId) {
     if (viewId === "landing") {
         document.getElementById("view-landing").classList.add("active");
         document.getElementById("nav-landing").classList.add("active");
+    } else if (viewId === "outlier") {
+        document.getElementById("view-outlier").classList.add("active");
+        const navOutlier = document.getElementById("nav-outlier");
+        if (navOutlier) navOutlier.classList.add("active");
+        initOutlierPage();
     } else if (viewId === "about") {
         document.getElementById("view-about").classList.add("active");
         document.getElementById("nav-about").classList.add("active");
@@ -980,6 +1067,8 @@ function zoomChart(chartType, factor) {
     if (chartType === "voltage") chart = tsVoltageChartInstance;
     else if (chartType === "sampleScatter") chart = sampleScatterChartInstance;
     else if (chartType === "sampleLine") chart = sampleLineChartInstance;
+    else if (chartType === "outlierCurve") chart = outlierCurveChartInstance;
+    else if (chartType === "outlierFeatures") chart = outlierFeaturesChartInstance;
     if (!chart) return;
 
     const xSpan = (chart.scales.x.max - chart.scales.x.min) * (1 / factor);
@@ -1001,7 +1090,14 @@ function resetChartZoom(chartType) {
     if (chartType === "voltage") chart = tsVoltageChartInstance;
     else if (chartType === "sampleScatter") chart = sampleScatterChartInstance;
     else if (chartType === "sampleLine") chart = sampleLineChartInstance;
+    else if (chartType === "outlierCurve") chart = outlierCurveChartInstance;
+    else if (chartType === "outlierFeatures") chart = outlierFeaturesChartInstance;
     if (!chart) return;
+
+    if (chartType === "outlierFeatures" || chartType === "outlierCurve") {
+        chart.resetZoom ? chart.resetZoom() : chart.update();
+        return;
+    }
 
     const b = defaultChartBounds[chartType];
     if (b) {
@@ -1292,9 +1388,485 @@ function renderMarkdown(md) {
         .replace(/\n/gim, "<br>");
 }
 
-function formatSci(val) {
-    if (val === 0 || val === null || val === undefined || isNaN(val)) return "0.00";
-    return val.toFixed(2);
+// =============================================================================
+// DYNAMIC OUTLIER DETECTION SYSTEM CONTROLLER
+// =============================================================================
+
+let activeOutlierModel = "breakdown";
+let activeOutlierPreset = "9";
+let outlierPopulationCache = {};
+let outlierCurveChartInstance = null;
+let outlierFeaturesChartInstance = null;
+let currentTestedCurveData = null;
+
+async function initOutlierPage() {
+    await selectOutlierModel(activeOutlierModel);
+}
+
+async function selectOutlierModel(modelType) {
+    activeOutlierModel = modelType;
+
+    // Update Segmented Control UI
+    document.querySelectorAll("#view-outlier .seg-btn").forEach(tab => tab.classList.remove("active"));
+    const activeTab = document.getElementById("tabOutlier" + modelType.charAt(0).toUpperCase() + modelType.slice(1));
+    if (activeTab) activeTab.classList.add("active");
+
+    const badge = document.getElementById("outlierHeaderBadge");
+    if (badge) {
+        if (modelType === "breakdown") badge.textContent = "Breakdown (Vce-Ic) • 17 Morphometric Features • Dual-Layer Score Fusion";
+        else if (modelType === "leakage") badge.textContent = "Leakage IV (Vapp-Ileak) • 17 Morphometric Features • Dual-Layer Score Fusion";
+        else if (modelType === "turnon") badge.textContent = "Turn-On (Vge-Ic) • 17 Morphometric Features • Dual-Layer Score Fusion";
+    }
+
+    // Fetch population baseline curves if not cached
+    if (!outlierPopulationCache[modelType]) {
+        try {
+            const resp = await fetch(`/api/anomaly/population?model=${modelType}`);
+            if (resp.ok) {
+                outlierPopulationCache[modelType] = await resp.json();
+            }
+        } catch (err) {
+            console.error("Failed to load outlier population data:", err);
+        }
+    }
+
+    const pop = outlierPopulationCache[modelType];
+    const threshEl = document.getElementById("statDynamicThresh");
+    if (threshEl && pop) threshEl.textContent = pop.dynamic_threshold;
+
+    // Default to Preset Curve 9 or 0
+    applyOutlierPreset(activeOutlierPreset || "9");
+}
+
+function applyOutlierPreset(presetVal) {
+    activeOutlierPreset = presetVal;
+
+    // Toggle active state on preset chips
+    document.querySelectorAll("#outlierPresetButtons .preset-btn").forEach(btn => btn.classList.remove("active"));
+    const activeBtn = document.getElementById("presetBtn" + (presetVal === "custom" ? "Custom" : presetVal));
+    if (activeBtn) activeBtn.classList.add("active");
+
+    const customArea = document.getElementById("customCurveArea");
+    const compIdInput = document.getElementById("outlierCompId");
+    
+    if (presetVal === "custom") {
+        if (customArea) customArea.style.display = "block";
+        if (compIdInput) compIdInput.value = "CUSTOM-DUT-01";
+        return;
+    }
+
+    if (customArea) customArea.style.display = "none";
+    if (compIdInput) compIdInput.value = `NASA-${activeOutlierModel.toUpperCase()}-CURVE-${presetVal}`;
+
+    const pop = outlierPopulationCache[activeOutlierModel];
+    if (pop && pop.curves) {
+        const cId = parseInt(presetVal, 10);
+        const match = pop.curves.find(c => c.curve_id === cId) || pop.curves[0];
+        if (match) {
+            currentTestedCurveData = {
+                x: match.full_x || match.x,
+                y: match.full_y || match.y
+            };
+        }
+    }
+
+    runOutlierDetection();
+}
+
+async function runOutlierDetection() {
+    const btn = document.getElementById("btnRunOutlier");
+    if (btn) {
+        btn.disabled = true;
+        btn.textContent = "Analyzing 17 Curve Features...";
+    }
+
+    const compId = document.getElementById("outlierCompId") ? document.getElementById("outlierCompId").value : "DUT-SWEEP";
+    const presetVal = activeOutlierPreset || "9";
+
+    let xPoints = [];
+    let yPoints = [];
+
+    if (presetVal === "custom") {
+        const rawText = document.getElementById("customCoordsInput").value.trim();
+        try {
+            if (rawText.startsWith("{")) {
+                const parsed = JSON.parse(rawText);
+                xPoints = parsed.x || parsed.X || [];
+                yPoints = parsed.y || parsed.Y || [];
+            } else {
+                // CSV rows
+                const lines = rawText.split("\n");
+                lines.forEach(l => {
+                    const parts = l.split(",");
+                    if (parts.length >= 2 && !isNaN(parseFloat(parts[0])) && !isNaN(parseFloat(parts[1]))) {
+                        xPoints.push(parseFloat(parts[0]));
+                        yPoints.push(parseFloat(parts[1]));
+                    }
+                });
+            }
+        } catch (e) {
+            alert("Could not parse custom coordinates. Please provide valid JSON or CSV numbers.");
+            if (btn) { btn.disabled = false; btn.textContent = "Run Outlier Screening & Explain"; }
+            return;
+        }
+    } else {
+        const pop = outlierPopulationCache[activeOutlierModel];
+        if (pop && pop.curves) {
+            const cId = parseInt(presetVal, 10);
+            const match = pop.curves.find(c => c.curve_id === cId) || pop.curves[0];
+            if (match) {
+                xPoints = match.full_x || match.x;
+                yPoints = match.full_y || match.y;
+            }
+        }
+    }
+
+    if (!xPoints.length || !yPoints.length) {
+        // Fallback synthetic sweep
+        xPoints = [2.0, 2.5, 3.0, 3.5, 4.0, 4.5, 4.8, 5.0, 5.2];
+        yPoints = [0.005, 0.006, 0.008, 0.012, 0.025, 0.08, 0.5, 12.0, 85.0];
+    }
+
+    currentTestedCurveData = { x: xPoints, y: yPoints };
+
+    try {
+        const resp = await fetch("/api/anomaly/detect", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                model_type: activeOutlierModel,
+                component_id: compId,
+                curve: { x: xPoints, y: yPoints },
+                include_curve_data: true
+            })
+        });
+
+        if (!resp.ok) {
+            const errData = await resp.json();
+            throw new Error(errData.error || "Anomaly detection failed");
+        }
+
+        const detResult = await resp.json();
+        renderOutlierResults(detResult);
+    } catch (err) {
+        console.error("Outlier detection error:", err);
+    } finally {
+        if (btn) {
+            btn.disabled = false;
+            btn.textContent = "Analyze Curve-Level Anomaly";
+        }
+    }
+}
+
+function renderOutlierResults(res) {
+    const anom = res.anomaly;
+
+    // 1. Verdict Badge
+    const badge = document.getElementById("outlierVerdictBadge");
+    if (badge) {
+        badge.textContent = `${anom.decision} (${anom.severity})`;
+        badge.className = "verdict-pill";
+        if (anom.decision === "PASS") badge.classList.add("badge-pass");
+        else if (anom.decision === "HOLD") badge.classList.add("badge-hold");
+        else badge.classList.add("badge-reject");
+    }
+
+    // 2. Metrics Deck
+    const statComb = document.getElementById("statCombinedScore");
+    if (statComb) statComb.textContent = anom.combined_score.toFixed(2);
+
+    const statDyn = document.getElementById("statDynamicScore");
+    if (statDyn) statDyn.textContent = anom.dynamic_score > 1000 ? anom.dynamic_score.toExponential(2) : anom.dynamic_score.toFixed(2);
+
+    const statDynThresh = document.getElementById("statDynamicThresh");
+    if (statDynThresh) statDynThresh.textContent = anom.dynamic_threshold.toFixed(2);
+
+    const statIso = document.getElementById("statIsolationScore");
+    if (statIso) {
+        statIso.textContent = `${anom.isolation_flag} (${anom.isolation_score.toFixed(2)})`;
+        statIso.className = "metric-val " + (anom.isolation_flag === "ANOMALY" ? "text-orange" : "text-blue");
+    }
+
+    const statCount = document.getElementById("statOutlierCount");
+    if (statCount) statCount.textContent = anom.outlier_feature_count;
+
+    // 3. Outlier Trigger Pills
+    const pillsWrap = document.getElementById("outlierTriggerPills");
+    if (pillsWrap) {
+        pillsWrap.innerHTML = "";
+        if (anom.outlier_features && anom.outlier_features.length > 0) {
+            anom.outlier_features.forEach(o => {
+                const pill = document.createElement("span");
+                pill.className = "tag-pill tag-red";
+                const scoreText = o.robust_score > 1000 ? o.robust_score.toExponential(1) : o.robust_score.toFixed(1);
+                pill.textContent = `${o.label} (${scoreText}σ ${o.direction})`;
+                pillsWrap.appendChild(pill);
+            });
+        } else {
+            pillsWrap.innerHTML = `<span class="tag-pill tag-green">None (All 17 Features Within ±3.5σ Bounds)</span>`;
+        }
+    }
+
+    // 4. AI Failure Physics Report
+    const aiReport = document.getElementById("outlierAiReport");
+    if (aiReport) {
+        aiReport.innerHTML = renderMarkdown(res.diagnostic_report || "");
+    }
+
+    // 5. Visual 1: Population Curve Overlay Chart
+    renderOutlierCurveChart(res);
+
+    // 6. Visual 2: 17-Feature Robust Anomaly Deviation Bar Chart
+    renderOutlierFeaturesChart(res);
+
+    // 7. 17 Features Table
+    renderOutlierTable(res);
+}
+
+function renderOutlierCurveChart(res) {
+    const canvas = document.getElementById("outlierCurveCanvas");
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+
+    if (outlierCurveChartInstance) {
+        outlierCurveChartInstance.destroy();
+        outlierCurveChartInstance = null;
+    }
+
+    const pop = outlierPopulationCache[activeOutlierModel];
+    const datasets = [];
+
+    // Background population curves
+    if (pop && pop.curves) {
+        pop.curves.forEach((c, idx) => {
+            const pts = c.x.map((xVal, i) => ({ x: xVal, y: c.y[i] }));
+            datasets.push({
+                label: `Lot Curve ${c.curve_id}`,
+                data: pts,
+                borderColor: "rgba(148, 163, 184, 0.28)",
+                borderWidth: 1,
+                pointRadius: 0,
+                fill: false,
+                tension: 0.1
+            });
+        });
+    }
+
+    // Foreground tested DUT curve
+    const testPts = res.curve.x.map((xVal, i) => ({ x: xVal, y: res.curve.y[i] }));
+    const dec = res.anomaly.decision;
+    const color = dec === "PASS" ? "#15803d" : (dec === "HOLD" ? "#d97706" : "#dc2626");
+
+    datasets.push({
+        label: `Tested DUT: ${res.component_id} (${dec})`,
+        data: testPts,
+        borderColor: color,
+        borderWidth: 3,
+        pointRadius: 2,
+        pointBackgroundColor: color,
+        fill: false,
+        tension: 0.1
+    });
+
+    // Add Knee Point Marker
+    const kneeV = res.features.knee_voltage;
+    if (kneeV !== undefined) {
+        const kneeCurrent = res.features.current_v90 || testPts[testPts.length - 1].y;
+        datasets.push({
+            label: `Knee Transition (${kneeV.toFixed(2)} V)`,
+            data: [{ x: kneeV, y: kneeCurrent }],
+            borderColor: "#7c3aed",
+            backgroundColor: "#7c3aed",
+            pointRadius: 6,
+            pointHoverRadius: 8,
+            showLine: false
+        });
+    }
+
+    const xUnit = res.curve.x_unit || "V";
+    const yUnit = res.curve.y_unit || "microAmpere";
+
+    outlierCurveChartInstance = new Chart(ctx, {
+        type: "line",
+        data: { datasets },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            animation: { duration: 350 },
+            interaction: { mode: "nearest", intersect: false },
+            plugins: {
+                legend: {
+                    display: true,
+                    labels: {
+                        filter: item => item.text.includes("Tested DUT") || item.text.includes("Knee"),
+                        font: { family: "Inter", size: 11, weight: "bold" }
+                    }
+                },
+                tooltip: {
+                    callbacks: {
+                        label: ctx => `${ctx.dataset.label}: (${ctx.parsed.x.toFixed(2)} ${xUnit}, ${ctx.parsed.y.toFixed(4)} ${yUnit})`
+                    }
+                }
+            },
+            scales: {
+                x: {
+                    type: "linear",
+                    title: { display: true, text: `Voltage (${xUnit})`, font: { family: "Inter", size: 11, weight: "bold" } },
+                    grid: { color: "#f1f5f9" }
+                },
+                y: {
+                    type: "linear",
+                    title: { display: true, text: `Current (${yUnit})`, font: { family: "Inter", size: 11, weight: "bold" } },
+                    grid: { color: "#f1f5f9" }
+                }
+            }
+        }
+    });
+}
+
+function renderOutlierFeaturesChart(res) {
+    const canvas = document.getElementById("outlierFeaturesCanvas");
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+
+    if (outlierFeaturesChartInstance) {
+        outlierFeaturesChartInstance.destroy();
+        outlierFeaturesChartInstance = null;
+    }
+
+    const details = res.feature_details || {};
+    const labels = [];
+    const scores = [];
+    const bgColors = [];
+    const borderColors = [];
+
+    Object.keys(details).forEach(key => {
+        const item = details[key];
+        labels.push(item.label.split("(")[0].trim());
+        const absVal = Math.min(50.0, item.abs_z); // Cap visual scale for charts
+        scores.push(absVal);
+        if (item.is_outlier) {
+            bgColors.push("rgba(220, 38, 38, 0.75)");
+            borderColors.push("#dc2626");
+        } else {
+            bgColors.push("rgba(124, 58, 237, 0.65)");
+            borderColors.push("#7c3aed");
+        }
+    });
+
+    outlierFeaturesChartInstance = new Chart(ctx, {
+        type: "bar",
+        data: {
+            labels: labels,
+            datasets: [{
+                label: "Robust IQR Deviation (|z|)",
+                data: scores,
+                backgroundColor: bgColors,
+                borderColor: borderColors,
+                borderWidth: 1.5,
+                borderRadius: 4
+            }]
+        },
+        options: {
+            indexAxis: "y",
+            responsive: true,
+            maintainAspectRatio: false,
+            animation: { duration: 400 },
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    callbacks: {
+                        label: ctx => `Robust Deviation: ${ctx.parsed.x.toFixed(2)}σ ${ctx.parsed.x >= 3.5 ? '(OUTLIER)' : '(NOMINAL)'}`
+                    }
+                }
+            },
+            scales: {
+                x: {
+                    title: { display: true, text: "Robust IQR Z-Score (|z|)", font: { family: "Inter", size: 11, weight: "bold" } },
+                    grid: { color: "#f1f5f9" },
+                    suggestedMax: 10
+                },
+                y: {
+                    grid: { display: false },
+                    ticks: { font: { family: "Inter", size: 10 } }
+                }
+            }
+        }
+    });
+}
+
+function renderOutlierTable(res) {
+    const tbody = document.getElementById("outlierTableBody");
+    if (!tbody) return;
+    tbody.innerHTML = "";
+
+    const details = res.feature_details || {};
+    Object.keys(details).forEach(key => {
+        const item = details[key];
+        const tr = document.createElement("tr");
+        if (item.is_outlier) tr.className = "outlier-row";
+
+        const valStr = typeof item.value === "number" ? (Math.abs(item.value) < 0.01 && item.value !== 0 ? item.value.toExponential(3) : item.value.toFixed(4)) : item.value;
+        const medStr = typeof item.population_median === "number" ? (Math.abs(item.population_median) < 0.01 && item.population_median !== 0 ? item.population_median.toExponential(3) : item.population_median.toFixed(4)) : item.population_median;
+        const madStr = typeof item.population_mad === "number" ? (Math.abs(item.population_mad) < 0.01 && item.population_mad !== 0 ? item.population_mad.toExponential(3) : item.population_mad.toFixed(4)) : item.population_mad;
+
+        const statusPill = item.is_outlier 
+            ? `<span class="tag-pill tag-red">OUTLIER (${item.robust_z.toFixed(2)}σ)</span>` 
+            : `<span class="tag-pill tag-green">NOMINAL</span>`;
+
+        tr.innerHTML = `
+            <td><strong>${escapeHtml(item.label)}</strong></td>
+            <td>${valStr}</td>
+            <td>${medStr}</td>
+            <td>${madStr}</td>
+            <td>${item.robust_z > 0 ? '+' : ''}${item.robust_z.toFixed(2)}</td>
+            <td>${statusPill}</td>
+        `;
+        tbody.appendChild(tr);
+    });
+}
+
+async function sendOutlierInlineChat() {
+    const input = document.getElementById("outlierInlineChatInput");
+    if (!input) return;
+    const msg = input.value.trim();
+    if (!msg) return;
+
+    input.value = "";
+    const reportBox = document.getElementById("outlierAiReport");
+    if (reportBox) {
+        reportBox.innerHTML = `
+            <div style="background:#e0e7ff;border:1px solid #c7d2fe;padding:8px 10px;border-radius:6px;font-size:0.8rem;color:#1e40af;margin-bottom:6px;">
+                <strong>You:</strong> ${escapeHtml(msg)}
+            </div>
+            <div style="background:#f8fafc;border:1px solid var(--border);padding:8px 10px;border-radius:6px;font-size:0.8rem;color:#475569;">
+                <span class="status-dot"></span> <em>Drishti AI is analyzing failure morphology...</em>
+            </div>
+        `;
+    }
+
+    try {
+        const response = await fetch("/api/chat", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ message: `[Dynamic Outlier Context - Model: ${activeOutlierModel}] ${msg}` })
+        });
+        const data = await response.json();
+        if (reportBox) {
+            reportBox.innerHTML = `
+                <div style="background:#e0e7ff;border:1px solid #c7d2fe;padding:8px 10px;border-radius:6px;font-size:0.8rem;color:#1e40af;margin-bottom:6px;">
+                    <strong>You:</strong> ${escapeHtml(msg)}
+                </div>
+                <div style="background:#f8fafc;border:1px solid var(--border);padding:10px 12px;border-radius:6px;font-size:0.82rem;color:#334155;line-height:1.5;">
+                    ${renderMarkdown(data.reply)}
+                </div>
+            `;
+        }
+    } catch (err) {
+        if (reportBox) {
+            reportBox.innerHTML += `<div style="color:#dc2626;font-size:0.8rem;margin-top:4px;">Error: ${err.message}</div>`;
+        }
+    }
 }
 
 // =============================================================================

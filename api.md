@@ -1,5 +1,5 @@
 # SIH26170 - REST API and Architecture Reference
-### Semiconductor Stress Screening, Time-Series Inference, and AI Explainability Engine
+### Semiconductor Stress Screening, Time-Series Inference, and Dynamic Outlier Detection Engine
 **Project: SIH26170 • Team Drishti • Symbiosis Institute of Technology, Pune • Smart India Hackathon 2024**
 
 ---
@@ -13,47 +13,61 @@
    - [GET /api/timeseries-data](#get-apitimeseries-data)
    - [GET /api/dataset-sample](#get-apidataset-sample)
    - [POST /api/pipeline/run](#post-apipipelinerun)
+   - [POST /api/predict](#post-apipredict)
+   - [POST /api/anomaly/detect](#post-apianomalydetect)
+   - [GET /api/anomaly/population](#get-apianomalypopulation)
+   - [GET /api/anomaly/features](#get-apianomalyfeatures)
    - [POST /api/chat](#post-apichat)
+   - [GET /api/stats](#get-apistats)
    - [GET /api/screenings](#get-apiscreenings)
    - [GET /api/screenings/{id}](#get-apiscreeningsid)
-4. [Feature Standardization and Scaling](#4-feature-standardization-and-scaling)
-5. [AI Explainability Engine](#5-ai-explainability-engine)
-6. [Python Programmatic Usage](#6-python-programmatic-usage)
-7. [Resilience and Fallback Modes](#7-resilience-and-fallback-modes)
+4. [Dynamic Outlier Detection Architecture (17-Feature Morphometry)](#4-dynamic-outlier-detection-architecture-17-feature-morphometry)
+5. [Feature Standardization and Scaling](#5-feature-standardization-and-scaling)
+6. [Physics-Grounded AI Explainability Engine](#6-physics-grounded-ai-explainability-engine)
+7. [Python Programmatic Usage](#7-python-programmatic-usage)
+8. [Resilience and Fallback Modes](#8-resilience-and-fallback-modes)
 
 ---
 
 ## 1. Architecture Overview
 
-The backend API coordinates communication between the browser dashboard, time-series machine learning models, statistical scaling layers, the Groq Llama 3.3 explanation service, and persistent database storage:
+The backend coordinates communication between the client dashboard, time-series Gradient Boosted regression models, the 17-feature Dynamic Outlier Detection Engine, the Groq Llama 3.3 explanation service, and persistent SQLite storage:
 
 ```
-  CLIENT (Web Browser, CLI, or Automated Test Bench)
+  CLIENT (Browser Dashboard, Automated Test Bench, or Python Script)
   │
   ▼
-  ┌────────────────────────────────────────────────────────┐
-  │         HTTP REST Server (backend/app.py)              │
-  │         Port 5000 • Python Standard Library            │
-  └───────────────────────────┬────────────────────────────┘
-                              │
-                              ▼
-  ┌────────────────────────────────────────────────────────┐
-  │        Master Screening Pipeline (pipeline.py)         │
-  └───────────┬───────────────────────────────┬────────────┘
-              │                               │
-  ┌───────────┴──────────────┐   ┌────────────┴───────────────┐
-  ▼                          ▼   ▼                            ▼
-┌──────────────────┐ ┌──────────────────┐ ┌───────────────────────────┐
-│  MinMax Scaler   │ │  Time-Series GBR │ │     Groq AI Explainer     │
-│   (scaler.py)    │ │(model_engine.py) │ │    (models/chatbot.py)    │
-│  [0, 1] Normal.  │ │ Degr. Forecast   │ │  Llama 3.3 70B Versatile  │
-└──────────────────┘ └──────────────────┘ └─────────────┬─────────────┘
-                                                        │
-                                                        ▼
-                                          ┌───────────────────────────┐
-                                          │  SQLite Audit Database    │
-                                          │    (data/screening.db)    │
-                                          └───────────────────────────┘
+  ┌──────────────────────────────────────────────────────────────┐
+  │              HTTP REST Server (backend/app.py)               │
+  │             Port 5000 • Python Standard Library              │
+  └───────────────┬──────────────────────────────┬───────────────┘
+                  │                              │
+                  ▼                              ▼
+  ┌───────────────────────────────┐ ┌────────────────────────────┐
+  │  Screening Pipeline           │ │  Dynamic Outlier Engine    │
+  │  (backend/pipeline.py)        │ │ (backend/anomaly_engine.py)│
+  └───────┬───────────────┬───────┘ └────────────┬───────────────┘
+          │               │                      │
+  ┌───────┴───────┐ ┌─────┴─────────┐ ┌──────────┴───────────────┐
+  ▼               ▼ ▼               ▼ ▼                          ▼
+┌──────────────┐ ┌───────────────┐ ┌─────────────┐ ┌─────────────┐
+│MinMax Scaler │ │Time-Series GBR│ │ 17-Feature  │ │Dual-Layer   │
+│ (scaler.py)  │ │(model_engine) │ │ Morphometry │ │Fusion Engine│
+└──────────────┘ └───────────────┘ └─────────────┘ └─────────────┘
+          │               │                      │
+          └───────────────┼──────────────────────┘
+                          ▼
+            ┌───────────────────────────┐
+            │   Groq AI Physics Agent   │
+            │    (models/chatbot.py)    │
+            │  Llama 3.3 70B Versatile  │
+            └─────────────┬─────────────┘
+                          │
+                          ▼
+            ┌───────────────────────────┐
+            │  SQLite Screening Audit   │
+            │    (backend/data/*.db)    │
+            └───────────────────────────┘
 ```
 
 ---
@@ -61,16 +75,16 @@ The backend API coordinates communication between the browser dashboard, time-se
 ## 2. Base URL and Protocol
 
 - **Base URL**: `http://localhost:5000`
-- **Default Content Type**: `application/json`
-- **Authentication**: None required for local screening endpoints.
-- **Environment Keys**: `GROQ_API_KEY` is loaded from `.env` on startup. If unavailable, the engine falls back to deterministic physics explanations automatically.
+- **Default Content-Type**: `application/json`
+- **CORS**: Enabled (`*`) for local test benches and web clients.
+- **Environment Keys**: `GROQ_API_KEY` (or `GEMINI_API_KEY`) loaded from `.env`. If offline or without keys, the built-in deterministic semiconductor physics engine executes with zero downtime.
 
 ---
 
 ## 3. REST API Endpoints
 
 ### `GET /api/health`
-Returns system status, active database path, and language model provider configuration.
+Returns full system health, service metadata, active language model provider, connected LLM architecture, and status text.
 
 **Example Request:**
 ```bash
@@ -81,170 +95,49 @@ curl -X GET http://localhost:5000/api/health
 ```json
 {
   "status": "healthy",
-  "service": "SIH26170 Semiconductor Screening API",
-  "version": "1.0.0",
+  "service": "SIH26170-Fullstack-System",
   "ai_provider": "groq",
   "ai_model": "llama-3.3-70b-versatile",
-  "groq_key_detected": true,
-  "database": "backend/data/screening.db"
+  "ai_provider_display": "Groq LPU",
+  "ai_badge": "Groq • Llama 3.3 70B Versatile",
+  "ai_status": "ONLINE",
+  "llm_connected": "llama-3.3-70b-versatile"
 }
 ```
 
 ---
 
 ### `GET /api/models`
-Returns metadata, physics definitions, input and output units, and operating bounds for supported semiconductor models.
-
-**Example Request:**
-```bash
-curl -X GET http://localhost:5000/api/models
-```
-
-**Example Response:**
-```json
-{
-  "models": {
-    "breakdown": {
-      "name": "Time-Series & Breakdown Model",
-      "input_param": "Collector-Emitter Voltage",
-      "input_unit": "V",
-      "output_param": "Leakage Current",
-      "output_unit": "microAmpere",
-      "typical_input_range": [0.0, 650.0],
-      "typical_output_range": [0.01, 150.0],
-      "description": "Models chronological collector-emitter degradation and high-voltage breakdown."
-    },
-    "leakage": {
-      "name": "Applied Voltage vs Leakage IV",
-      "input_param": "Applied Stress Voltage",
-      "input_unit": "V",
-      "output_param": "Reverse Leakage Current",
-      "output_unit": "microAmpere",
-      "typical_input_range": [0.0, 600.0],
-      "typical_output_range": [0.01, 120.0],
-      "description": "Evaluates reverse junction leakage current and thermal carrier generation."
-    },
-    "turnon": {
-      "name": "Gate Voltage vs Collector Current",
-      "input_param": "Gate-Emitter Voltage",
-      "input_unit": "V",
-      "output_param": "Collector Current",
-      "output_unit": "microAmpere",
-      "typical_input_range": [0.0, 15.0],
-      "typical_output_range": [0.01, 100.0],
-      "description": "Analyzes channel conduction threshold shifts and gate dielectric integrity."
-    }
-  }
-}
-```
+Returns physics metadata, input/output parameters, units, typical ranges, and min/max calibration bounds for all 3 screening models (`breakdown`, `leakage`, `turnon`).
 
 ---
 
-### `GET /api/timeseries-data`
-Returns sequential chronological points formatted for chart rendering, including historical training data, future ground truth, model forecast, and voltage trajectories.
-
-**Query Parameters:**
-- `model` (optional, default=`breakdown`): `breakdown`, `leakage`, or `turnon`.
-- `limit` (optional, default=120): Number of time points to return.
-
-**Example Request:**
-```bash
-curl -X GET "http://localhost:5000/api/timeseries-data?model=breakdown&limit=5"
-```
-
-**Example Response:**
-```json
-{
-  "model_type": "breakdown",
-  "total_points": 5,
-  "voltage_points": [
-    { "x": 0.0, "y": 550.0 },
-    { "x": 30.0, "y": 550.0 }
-  ],
-  "train_points": [
-    { "x": 0.0, "y": 0.01 },
-    { "x": 30.0, "y": 0.012 }
-  ],
-  "test_actual_points": [
-    { "x": 90960.0, "y": 14.2 },
-    { "x": 90990.0, "y": 14.5 }
-  ],
-  "test_predicted_points": [
-    { "x": 90960.0, "y": 13.9 },
-    { "x": 90990.0, "y": 14.1 }
-  ],
-  "metrics": {
-    "train_rows": 3032,
-    "test_rows": 758,
-    "r2_score": 0.989,
-    "mae_microampere": 1.87
-  }
-}
-```
-
----
-
-### `GET /api/dataset-sample`
-Returns sampled experimental laboratory points from the characterization CSV dataset for rendering scatterplots.
-
-**Query Parameters:**
-- `model` (optional, default=`breakdown`): `breakdown`, `leakage`, or `turnon`.
-- `limit` (optional, default=100): Number of points to sample.
-
-**Example Request:**
-```bash
-curl -X GET "http://localhost:5000/api/dataset-sample?model=breakdown&limit=3"
-```
-
-**Example Response:**
-```json
-{
-  "model_type": "breakdown",
-  "count": 3,
-  "points": [
-    { "x": 10.0, "y": 0.01 },
-    { "x": 300.0, "y": 0.08 },
-    { "x": 550.0, "y": 12.5 }
-  ]
-}
-```
+### `GET /api/timeseries-data?model={breakdown|leakage|turnon}&limit=120`
+Returns sequential chronological telemetry points for time-series degradation charts (3,790 observations with 30-minute sampling intervals).
 
 ---
 
 ### `POST /api/pipeline/run`
-**Primary Screening Execution Endpoint**. Receives test bench inputs, standardizes features, executes regression forecasting, calculates mathematical discrepancies, produces AI failure physics explanations, and stores the audit record.
+**Primary Screening Execution Endpoint**. Evaluates scalar test bench measurements, normalizes inputs, forecasts expected degradation via Gradient Boosted Regression, calculates residuals, and produces a physics-grounded verdict.
 
 **Request Body:**
 | Field | Type | Required | Description |
 | :--- | :--- | :--- | :--- |
 | `model_type` | string | Yes | `breakdown`, `leakage`, or `turnon` |
-| `raw_input` | float | Yes | Applied voltage (in Volts) |
-| `time_minutes` | float | No | Elapsed burn-in time (default: `90960.0`) |
-| `user_said_output` | float | No | Measured current from test bench (in microAmpere) |
+| `raw_input` | float | Yes | Applied voltage in Volts |
+| `time_minutes` | float | No | Accelerated burn-in time in minutes (default: `90960.0`) |
+| `user_said_output` | float | No | Measured current from test bench in $\mu\text{A}$ |
+| `component_id` | string | No | Component DUT Identifier (default: `DUT-01`) |
 | `use_ai` | boolean | No | Enable generative failure explanation (default: `true`) |
-
-**Example Request:**
-```bash
-curl -X POST http://localhost:5000/api/pipeline/run \
-  -H "Content-Type: application/json" \
-  -d '{
-    "model_type": "breakdown",
-    "raw_input": 550.0,
-    "time_minutes": 90960.0,
-    "user_said_output": 12.50,
-    "use_ai": true
-  }'
-```
 
 **Example Response:**
 ```json
 {
-  "screening_id": 1,
+  "record_id": 14,
+  "component_id": "NASA-IGBT-01",
   "model_type": "breakdown",
-  "model_name": "Time-Series & Breakdown Model",
   "raw_input": 550.0,
   "input_unit": "V",
-  "time_minutes": 90960.0,
   "scaled_input": 0.846,
   "physical_output": 0.01,
   "output_unit": "microAmpere",
@@ -257,121 +150,198 @@ curl -X POST http://localhost:5000/api/pipeline/run \
     "risk_decision": "PASS",
     "severity": "NORMAL"
   },
-  "chatbot_explanation": "Screening Verdict: PASS\n\n1. Deviation: Measured current matches normal operating envelope within calibrated limits.\n2. Physics Cause: Standard thermal generation with negligible dielectric degradation.\n3. Next Action: Proceed to subsequent screening stage.",
-  "timestamp": "2026-08-30T03:00:00.000000"
+  "chatbot_explanation": "Screening Verdict: PASS\n\n1. Deviation: Measured current matches normal operating envelope within calibrated limits.\n2. Physics Cause: Standard thermal generation with negligible dielectric degradation.\n3. Next Action: Proceed to subsequent screening stage."
 }
 ```
 
 ---
 
-### `POST /api/chat`
-Interactive conversational endpoint for asking physics, degradation mechanism, or screening criteria questions.
+### `POST /api/anomaly/detect`
+**Dynamic Outlier Detection System Endpoint**. Ingests a complete multi-cycle I-V characterization sweep curve, extracts 17 morphometric & electrical features, computes Robust Dynamic IQR Z-Scores relative to lot threshold $\theta_{\text{dynamic}}$, executes Isolation Forest ML scoring, and produces a Dual-Layer Fusion Verdict (`PASS` / `HOLD` / `REJECT`).
 
 **Request Body:**
 ```json
 {
-  "message": "Why does leakage current increase under high temperature burn-in?"
+  "model_type": "breakdown",
+  "component_id": "NASA-IGBT-DUT-09",
+  "curve": {
+    "x": [2.02, 3.50, 4.80, 5.15, 5.20],
+    "y": [0.0058, 0.080, 5.20, 45.0, 85.0]
+  },
+  "include_curve_data": true
 }
-```
-
-**Example Request:**
-```bash
-curl -X POST http://localhost:5000/api/chat \
-  -H "Content-Type: application/json" \
-  -d '{"message": "Why does leakage current increase under high temperature burn-in?"}'
 ```
 
 **Example Response:**
 ```json
 {
-  "query": "Why does leakage current increase under high temperature burn-in?",
-  "reply": "Elevated thermal stress at 125°C increases intrinsic carrier concentration exponentially via thermal generation. Trapped charges in gate and field oxides become active, creating additional conduction paths that accelerate leakage drift.",
-  "provider": "groq",
-  "model": "llama-3.3-70b-versatile"
-}
-```
-
----
-
-### `GET /api/screenings`
-Retrieves past screening transactions from the persistent audit database.
-
-**Query Parameters:**
-- `limit` (optional, default=50): Maximum number of records to return.
-- `model` (optional): Filter by `breakdown`, `leakage`, or `turnon`.
-
-**Example Response:**
-```json
-{
-  "total": 1,
-  "screenings": [
-    {
-      "id": 1,
-      "model_type": "breakdown",
-      "raw_input": 550.0,
-      "time_minutes": 90960.0,
-      "physical_output": 0.01,
-      "user_said_output": 12.50,
-      "pct_diff": 99.92,
-      "risk_decision": "PASS",
-      "timestamp": "2026-08-30 03:00:00"
+  "success": true,
+  "system_name": "Dynamic Outlier Detection System",
+  "model_type": "breakdown",
+  "component_id": "NASA-IGBT-DUT-09",
+  "anomaly": {
+    "dynamic_score": 31.123,
+    "dynamic_threshold": 8.083,
+    "dynamic_flag": "ANOMALY",
+    "outlier_feature_count": 3,
+    "outlier_features": [
+      {
+        "feature": "max_slope",
+        "label": "Max Transconductance / Steepness (dI/dV)",
+        "robust_score": 31.12,
+        "direction": "HIGH"
+      },
+      {
+        "feature": "curve_area",
+        "label": "Integrated I-V Area (μA·V)",
+        "robust_score": 10.00,
+        "direction": "HIGH"
+      }
+    ],
+    "isolation_score": 0.6306,
+    "isolation_flag": "ANOMALY",
+    "combined_score": 2.20,
+    "decision": "REJECT",
+    "severity": "HIGH",
+    "weights": {
+      "dynamic": 0.60,
+      "isolation_forest": 0.40
     }
-  ]
+  },
+  "features": {
+    "min_voltage": 2.02,
+    "max_voltage": 5.20,
+    "knee_voltage": 5.15,
+    "max_slope": 0.00144,
+    "curve_area": 0.000042
+  },
+  "feature_details": {
+    "max_slope": {
+      "name": "max_slope",
+      "label": "Max Transconductance / Steepness (dI/dV)",
+      "value": 0.00144,
+      "population_median": 0.000045,
+      "population_mad": 0.000021,
+      "robust_z": 31.12,
+      "abs_z": 31.12,
+      "is_outlier": true
+    }
+  },
+  "diagnostic_report": "### 🛑 Critical Curve-Level Defect — REJECT\n- **Physical Failure Mode**: Premature avalanche breakdown multiplication."
 }
 ```
 
 ---
 
-## 4. Feature Standardization and Scaling
-
-Input voltages and times are normalized internally into the `[0, 1]` interval using calibrated statistics:
-
-$$\text{Normalized Feature: } X_{\text{norm}} = \frac{X_{\text{raw}} - X_{\min}}{X_{\max} - X_{\min}}$$
-
-Output currents are computed in physical units of **microAmpere** ($\mu\text{A}$) to ensure direct compatibility with laboratory test instrumentation.
+### `GET /api/anomaly/population?model={breakdown|leakage|turnon}`
+Returns baseline population sweep curves across the screening lot, feature statistics (median & MAD), and dynamic threshold $\theta_{\text{dynamic}}$ for interactive population overlay charts.
 
 ---
 
-## 5. AI Explainability Engine
-
-Explanations are produced by Groq Llama 3.3 using structured failure physics templates:
-1. **Deviation Summary**: Quantitative drift percentage and baseline ratio.
-2. **Physics Cause**: Primary semiconductor degradation mechanism (e.g., Avalanche multiplication, Shockley-Read-Hall recombination, oxide trapping, or thermal fatigue).
-3. **Screening Action**: Decision (PASS, HOLD, or REJECT) with recommended physical testing action.
+### `GET /api/anomaly/features`
+Returns full dictionary of the 17 morphometric feature names, human-readable labels, and electrical definitions.
 
 ---
 
-## 6. Python Programmatic Usage
+### `POST /api/chat`
+Conversational chat endpoint for asking physics, degradation mechanism, or screening criteria questions. Responses stream with Groq Llama 3.3 or deterministic semiconductor fallback.
 
-The pipeline can be executed directly within Python environments:
+**Request Body:**
+```json
+{
+  "message": "Explain how SRH recombination causes sub-threshold leakage increase during burn-in.",
+  "session_id": "lab_bench_session_1"
+}
+```
+
+---
+
+### `GET /api/stats`
+Returns summary statistics of historical screenings stored in SQLite (total screenings, PASS count, HOLD count, REJECT count, average delta).
+
+---
+
+### `GET /api/screenings?limit=50&offset=0`
+Returns paginated historical screening records with full audit trail.
+
+---
+
+## 4. Dynamic Outlier Detection Architecture (17-Feature Morphometry)
+
+| # | Feature | Definition | Physical Significance |
+| :---: | :--- | :--- | :--- |
+| 1 | `min_voltage` | Minimum sweep voltage ($V_{\min}$) | Zero-bias contact offset |
+| 2 | `max_voltage` | Peak sweep voltage ($V_{\max}$) | Peak stress electric field |
+| 3 | `min_current` | Minimum sweep current ($I_{\min}$) | Sub-threshold noise floor |
+| 4 | `max_current` | Maximum sweep current ($I_{\max}$) | Peak conduction / avalanche ceiling |
+| 5 | `mean_current` | Mean sweep current ($\bar{I}$) | Global thermal dissipation |
+| 6 | `std_current` | Current standard deviation ($\sigma_I$) | Curve dispersion / variability |
+| 7 | `max_slope` | Maximum slope ($\max dI/dV$) | Peak transconductance / avalanche steepness |
+| 8 | `mean_slope` | Mean conductance ($\overline{dI/dV}$) | Global channel conductance |
+| 9 | `knee_voltage` | Voltage at max slope ($V_{\text{knee}}$) | Avalanche knee $V_{BR}$ or threshold $V_{th}$ |
+| 10 | `current_v25` | Current at 25% span ($I_{V25}$) | Low-field ohmic / SRH leakage |
+| 11 | `current_v50` | Current at 50% span ($I_{V50}$) | Mid-field Poole-Frenkel emission |
+| 12 | `current_v75` | Current at 75% span ($I_{V75}$) | Pre-avalanche carrier multiplication |
+| 13 | `current_v90` | Current at 90% span ($I_{V90}$) | High-field avalanche onset |
+| 14 | `voltage_10pct` | Voltage at 10% peak current | Sub-threshold turn-on boundary |
+| 15 | `voltage_50pct` | Voltage at 50% peak current | Conduction transition midpoint |
+| 16 | `voltage_90pct` | Voltage at 90% peak current | Hard saturation / avalanche boundary |
+| 17 | `curve_area` | Total integrated area ($\int I \, dV$) | Total energy dissipation integral |
+
+---
+
+## 5. Feature Standardization and Scaling
+
+All features are normalized using calibrated MinMax transforms to preserve model numerical stability:
+
+$$x_{\text{scaled}} = \frac{x_{\text{raw}} - x_{\min}}{x_{\max} - x_{\min}}, \quad x_{\text{scaled}} \in [0, 1]$$
+
+---
+
+## 6. Physics-Grounded AI Explainability Engine
+
+Powered by Groq Llama 3.3 70B Versatile, the explainability engine translates mathematical discrepancies into structured root-cause physical reports:
+1. **Time-Series Residual**: Residual error ($e = I_{\text{user}} - I_{\text{forecast}}$) and percentage drift.
+2. **Semiconductor Degradation Mechanism**: Identifies Impact Ionization, SRH Trap Recombination, Gate Oxide Charge Trapping, or Thermal Runaway.
+3. **Flight Qualification Verdict**: Actionable recommendation (`PASS` / `HOLD` / `REJECT`).
+
+---
+
+## 7. Python Programmatic Usage
 
 ```python
-from backend.pipeline import ScreeningPipeline
+import urllib.request
+import json
 
-pipeline = ScreeningPipeline()
+# 1. Check System Health
+with urllib.request.urlopen("http://localhost:5000/api/health") as resp:
+    print(json.loads(resp.read().decode("utf-8")))
 
-result = pipeline.process_screening(
-    model_type="breakdown",
-    raw_input=550.0,
-    time_minutes=90960.0,
-    user_said_output=12.50
+# 2. Run Dynamic Outlier Detection
+payload = json.dumps({
+    "model_type": "breakdown",
+    "component_id": "NASA-DUT-09",
+    "curve": {
+        "x": [2.0, 3.5, 4.8, 5.2],
+        "y": [0.005, 0.08, 5.2, 85.0]
+    }
+}).encode("utf-8")
+
+req = urllib.request.Request(
+    "http://localhost:5000/api/anomaly/detect",
+    data=payload,
+    headers={"Content-Type": "application/json"},
+    method="POST"
 )
-
-print("Decision:", result["discrepancy"]["risk_decision"])
-print("Explanation:\n", result["chatbot_explanation"])
+with urllib.request.urlopen(req) as resp:
+    result = json.loads(resp.read().decode("utf-8"))
+    print("Verdict:", result["anomaly"]["decision"])
+    print("Combined Score:", result["anomaly"]["combined_score"])
 ```
 
 ---
 
-## 7. Resilience and Fallback Modes
+## 8. Resilience and Fallback Modes
 
-- **Zero Mandatory Package Dependencies**: Runs directly on the Python standard library.
-- **Automatic Fallback**: If external API connections are unavailable, the system switches immediately to local rule-based physics explanations without interrupting screening operations.
-- **Consistent Error Structure**:
-  ```json
-  {
-    "error": "Descriptive error message",
-    "status": 400
-  }
-  ```
-
+- **Zero-Dependency Fallback**: If external APIs are unreachable, the engine utilizes the built-in offline semiconductor physics expert system with 0% downtime.
+- **Graceful ML Degradation**: If scikit-learn is unavailable, the system executes robust Mahalanobis/IQR statistical anomaly estimators.

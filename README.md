@@ -1,5 +1,5 @@
 # SIH26170 - AI-Driven Anomaly Detection in Component Burn-In and Screening
-### Predictive Environmental Stress Screening for Semiconductor Components
+### Predictive Environmental Stress Screening & Dynamic Outlier Detection for Semiconductor Components
 **Team Drishti • Symbiosis Institute of Technology, Pune • Smart India Hackathon 2024**
 
 ---
@@ -8,22 +8,22 @@
 
 | Number | Member Name | Student ID | Domain |
 | :---: | :--- | :--- | :--- |
-| 1 | **Samarth Buchake** | 25070126151 | Machine Learning and Fullstack Architecture |
-| 2 | **Vibhuti Patil** | 25070126193 | Physics of Failure and Semiconductor Models |
-| 3 | **Maitreyee Kulkarni** | 24070123058 | Data Preprocessing and Statistical Calibration |
-| 4 | **Varija Korti** | 24070123165 | Time-Series Regression and Drift Prediction |
-| 5 | **Kaushal Sidhpura** | 25070127093 | Dynamic Outlier Detection and Anomaly Scoring |
-| 6 | **Prachi Hirve** | 26070126090 | Explainability Engine and Quality Diagnostics |
+| 1 | **Samarth Buchake** | 25070126151 | Machine Learning & Fullstack Architecture |
+| 2 | **Vibhuti Patil** | 25070126193 | Physics of Failure & Semiconductor Models |
+| 3 | **Maitreyee Kulkarni** | 24070123058 | Data Preprocessing & Statistical Calibration |
+| 4 | **Varija Korti** | 24070123165 | Time-Series Regression & Drift Prediction |
+| 5 | **Kaushal Sidhpura** | 25070127093 | Dynamic Outlier Detection & Anomaly Scoring |
+| 6 | **Prachi Hirve** | 26070126090 | Explainability Engine & Quality Diagnostics |
 
 ---
 
 ## Problem Context
 
 ### Background
-In high-reliability sectors such as space missions and satellite hardware, electronic components undergo rigorous Environmental Stress Screening, including high-temperature burn-in testing at 125°C across hundreds of operational hours.
+In high-reliability sectors such as space missions, satellite avionics, and defense hardware, electronic components (e.g., IGBTs, MOSFETs) undergo rigorous Environmental Stress Screening (ESS), including high-temperature accelerated burn-in testing at $125^\circ\text{C}$ across hundreds of operational hours.
 
 ### The Hidden Defect Challenge
-Traditional semiconductor testing relies on fixed datasheet ceilings. When subtle internal material defects drift quietly below standard limits, flawed semiconductors pass basic screening, reach flight assembly, and cause catastrophic orbital failures:
+Traditional semiconductor test benches rely on **fixed static datasheet ceilings**. When subtle internal material defects drift quietly below standard limits, flawed semiconductors pass basic screening, reach flight assembly, and cause catastrophic in-orbit failures:
 
 ```
 Batch Typical Current: 10 microAmpere
@@ -31,24 +31,27 @@ Flawed Part Current:   45 microAmpere
 Fixed Datasheet Limit: 50 microAmpere (Technically passes, but carries extreme latent failure risk)
 ```
 
-Drishti solves this challenge by detecting subtle population-relative drift and forecasting long-term degradation before parts ever leave the ground.
+**Drishti** solves this challenge by detecting subtle population-relative drift across full I-V sweep curves and forecasting long-term time-series degradation before parts ever leave the ground.
 
 ---
 
 ## Solution Architecture
 
-### 1. Dynamic Population Outlier Detection
-Rather than checking only hard ceiling limits, the engine compares individual component degradation trajectories against the collective batch distribution, flagging devices that drift away from healthy peers.
+### 1. Dynamic Outlier Detection System (17-Feature Morphometry)
+Rather than evaluating single isolated scalar points, the Dynamic Outlier Detection System ingests complete multi-cycle I-V sweep curves ($V_{ce}-I_c$, $V_{app}-I_{leak}$, $V_{ge}-I_c$). It extracts **17 morphometric & electrical features** and performs **dual-layer population-relative anomaly detection**:
+- **Layer 1 (Robust Dynamic IQR Scoring)**: Computes robust z-scores relative to lot median and Median Absolute Deviation ($\text{MAD}$) evaluated against dynamic threshold $\theta_{\text{dynamic}}$.
+- **Layer 2 (Isolation Forest ML)**: Unsupervised ensemble of 500 isolation trees mapping multi-dimensional feature isolation depth.
+- **Dual-Layer Fusion**: Combines normalized dynamic evidence ($60\%$) and isolation evidence ($40\%$) to render definitive verdicts: `PASS`, `HOLD`, or `REJECT`.
 
-### 2. Time-Series Degradation and Drift Predictor
+### 2. Time-Series Degradation & Drift Predictor
 An operational time-series regression pipeline analyzing sequential sensor telemetry across 3,790 observations with 30-minute intervals:
-- **Feature Engineering**: Lags, rolling window statistics shifted to prevent lookahead bias, electrical delta indicators, and power interaction metrics.
-- **Chronological Evaluation**: Past 80% baseline training and future 20% unseen evaluation without shuffling.
+- **Feature Engineering**: Historical lags, leakage-safe rolling window statistics, electrical rate-of-change indicators, and power interaction metrics.
+- **Chronological Evaluation**: Past 80% baseline training and future 20% unseen evaluation without lookahead shuffling.
 - **Gradient Boosted Regression**: Evaluates drift curves using TimeSeriesSplit cross-validation to project degradation trends.
-- **Residual Monitoring**: Tracks residuals (Actual minus Predicted current in microAmpere) to capture sustained leakage acceleration, dielectric charge trapping, and early breakdown onsets.
+- **Residual Monitoring**: Tracks residuals ($e = I_{\text{measured}} - I_{\text{forecast}}$) to capture sustained leakage acceleration, dielectric charge trapping, and early breakdown onsets.
 
-### 3. Physics-Grounded AI Explainability
-Powered by Groq Llama 3.3, the system translates mathematical curve discrepancies into plain-language semiconductor physics root-cause analyses, identifying avalanche breakdown, carrier trap recombination, and threshold voltage drift for quality assurance teams.
+### 3. Physics-Grounded AI Explainability & Connected LLM Diagnostics
+Powered by **Groq Llama 3.3 70B Versatile** (with deterministic offline semiconductor physics fallback), the system translates mathematical curve discrepancies into plain-language root-cause failure analyses, identifying avalanche breakdown multiplication, deep-level SRH trap recombination, and oxide charge trapping for quality assurance teams.
 
 ---
 
@@ -56,14 +59,22 @@ Powered by Groq Llama 3.3, the system translates mathematical curve discrepancie
 
 ```mermaid
 flowchart TD
-    SensorStream["Sequential Telemetry Stream (3,790 observations, dt=30min)"]
-    User["Test Bench Input (Voltage, Measured Current in microAmpere)"]
+    SweepData["Complete I-V Sweep Curves (x, y)"]
+    SensorStream["Sequential Telemetry Stream (3,790 rows, dt=30min)"]
+    User["Test Bench Input (Voltage, Measured Current in μA)"]
+
+    subgraph DynamicOutlierEngine ["Dynamic Outlier Detection Engine (backend/anomaly_engine.py)"]
+        FeatureExtractor["17-Feature Morphometric Extractor"]
+        DynamicIQR["Layer 1: Robust Dynamic IQR & MAD Scoring"]
+        IsoForest["Layer 2: 500-Tree Isolation Forest ML"]
+        FusionScore["Dual-Layer Fusion (60% Dynamic + 40% ML)"]
+    end
 
     subgraph TimeSeriesPipeline ["Time-Series Processing Pipeline"]
         ChronoSort["Chronological Sorting by time_minutes"]
         LagEngine["Historical Lag Engine"]
         RollEngine["Leakage-Safe Rolling Statistics"]
-        DeltaEngine["Rate of Change and Power Interaction"]
+        DeltaEngine["Rate of Change & Power Interaction"]
         ChronoSplit["Chronological Split (80% Train / 20% Forecast)"]
     end
 
@@ -76,49 +87,54 @@ flowchart TD
     end
 
     subgraph Frontend ["Frontend Interface (http://localhost:5000)"]
-        Landing["Dashboard Overview (Breakdown, Leakage IV, Turn-On, About Us)"]
-        LeftPane["Left Pane: Voltage, Elapsed Time Scrubber, Current, Screening Verdict"]
-        RightPane["Right Pane: AI Explainability (Top) and 2 Core Telemetry Graphs (Below)"]
+        Landing["Symmetric 4-Card Dashboard Grid"]
+        ModelView["Model View: Sliders, Scrubber, AI Explainability & 2 Telemetry Charts"]
+        OutlierView["Dynamic Outlier View: Segmented Tabs, Presets, 17-Feature Table & Population Overlays"]
+        AIDrawer["Floating AI Diagnostics Drawer (Connected Groq LLM & Physics Hub)"]
     end
 
-    subgraph AI ["Explainability Engine (models/chatbot.py)"]
-        Groq["Groq Llama 3.3 Model Engine"]
-        Fallback["Deterministic Physics Rule Engine Fallback"]
+    subgraph AI ["AI Diagnostics (models/chatbot.py)"]
+        Groq["Groq Llama 3.3 70B Versatile Engine"]
+        Fallback["Deterministic Physics Expert Engine Fallback"]
     end
 
+    SweepData --> FeatureExtractor --> DynamicIQR & IsoForest --> FusionScore --> OutlierView
     SensorStream --> ChronoSort --> LagEngine --> RollEngine --> DeltaEngine --> ChronoSplit --> Scaler
-    User --> Landing --> LeftPane
-    LeftPane --> Scaler --> GBRModel --> ResidualMonitor --> RiskClassifier
-    ResidualMonitor --> DB
-    RiskClassifier --> Groq --> RightPane
-    RiskClassifier --> Fallback -.-> RightPane
-    GBRModel --> RightPane
+    User --> Landing --> ModelView & OutlierView
+    ModelView --> Scaler --> GBRModel --> ResidualMonitor --> RiskClassifier
+    RiskClassifier --> DB
+    RiskClassifier --> Groq & Fallback --> ModelView & AIDrawer
+    FusionScore --> Groq & Fallback --> OutlierView & AIDrawer
 ```
 
 ---
 
 ## User Interface Structure
 
-The application features a clean, responsive split-screen layout designed for laboratory screening workflows:
+The application features a clean, white-themed layout with Indian flag accents (saffron orange, chakra blue, india green, navy, and purple):
 
-1. **Dashboard View**:
-   - High-level overview cards for the three semiconductor models and the team background.
-   - Quick navigation to Breakdown, Leakage IV, Turn-On, and About Us.
+1. **Dashboard (Landing Page)**:
+   - Symmetric 4-card grid for easy navigation:
+     1. `Dynamic Outlier Detection System` (Purple Theme)
+     2. `Time-Series & Breakdown` (Chakra Blue Theme)
+     3. `Leakage IV Model` (India Green Theme)
+     4. `Turn-On Model` (Chakra Navy Theme)
 
-2. **Model View**:
-   - **Left Column**:
-     - Input Voltage field and synchronized voltage slider.
-     - Elapsed Burn-In Time scrubber (0 to 113,700 minutes) with real-time Auto-Play simulation.
-     - Measured Current field and synchronized current slider (in microAmpere).
-     - Instant device condition presets (Aged, Pristine, Runaway).
-     - Screening Verdict card displaying status (PASS / HOLD / REJECT) alongside GBR forecast, measured current, residual error, and drift percentage.
-   - **Right Column**:
-     - **AI Failure Physics and Explainability Panel (Top)**: Real-time root-cause failure breakdown and interactive question-and-answer bar.
-     - **Graph 1: Leakage Current vs Time**: Displays historical training points, future forecast, live operating marker, with an in-toolbar button to view laboratory scatterplots.
-     - **Graph 2: Operating Stress Voltage Profile**: Displays chronological voltage stress trajectory with an in-toolbar button to view transfer curves and tolerance limits.
+2. **Model Views (`#view-model`)**:
+   - **Left Column**: Synchronized voltage/current sliders, elapsed burn-in time scrubber (0 to 113,700 min) with Auto-Play simulation, condition presets, and screening verdict cards.
+   - **Right Column**: AI Failure Physics & Explainability panel with connected LLM badge (`🟢 Groq • Llama 3.3 70B Versatile`), quick prompt suggestion chips, and 2 interactive telemetry graphs.
 
-3. **About Us View**:
-   - Team background, challenge summary, technical methodology, and member roster presented in clean human language with zero bracketed text.
+3. **Dynamic Outlier Detection View (`#view-outlier`)**:
+   - Segmented top-bar model switcher (`Breakdown`, `Leakage IV`, `Turn-On`).
+   - Sweep curve presets (`Curve 9 (Defective)`, `Curve 8 (Moderate Drift)`, `Curve 2 (Severe Knee Collapse)`, `Curve 0 (Nominal PASS)`, `⚡ Custom Curve Injection`).
+   - 4-metric summary grid (`Dual-Layer Verdict`, `Dynamic IQR Score`, `Isolation Forest Depth`, `Combined Anomaly Score`).
+   - Population overlay curve chart and 17-feature deviation radar/bar chart.
+   - Full 17-feature breakdown table with population median, MAD, robust z-score, and defect flags.
+
+4. **Floating AI Diagnostics Drawer**:
+   - Fixed to bottom right with 2-row collision-free header displaying the active model (`🟢 Groq LPU • Llama 3.3 70B`).
+   - Interactive **Welcome Dashboard** with 4 quick-start diagnostic cards (*Avalanche Breakdown*, *SRH Recombination*, *Screening Policies*, *17 Features*).
+   - Seamless FAB show/hide toggle.
 
 ---
 
@@ -126,9 +142,9 @@ The application features a clean, responsive split-screen layout designed for la
 
 ### Prerequisites
 - Python 3.9 or higher
-- Standard web browser (Chrome, Brave, Firefox, Edge, Safari)
+- Standard modern web browser (Chrome, Brave, Firefox, Edge, Safari)
 
-### Installation and Launch
+### Installation & Launch
 
 1. Navigate to the project directory:
 ```bash
@@ -157,6 +173,7 @@ http://localhost:5000
 ├── backend/
 │   ├── app.py              # HTTP server and REST API routing
 │   ├── pipeline.py         # Master screening pipeline and verdict engine
+│   ├── anomaly_engine.py   # Dynamic Outlier Detection Engine (17-feature morphometry & fusion)
 │   ├── model_engine.py     # Time-series GBR and degradation forecasting
 │   ├── scaler.py           # Feature normalization engine
 │   └── data/               # Persistent SQLite screening audit database
@@ -168,7 +185,7 @@ http://localhost:5000
 │   ├── LeakageIV.csv
 │   └── TurnOn.csv
 ├── frontend/
-│   ├── index.html          # Split-screen UI, dashboard, and About Us view
+│   ├── index.html          # Split-screen UI, 4-card dashboard, and outlier views
 │   ├── styles.css          # Modern CSS styling and responsive layout rules
 │   └── app.js              # State management, Chart.js renderers, and API bridge
 ├── models/                 # Physics models, notebooks, and chatbot fallback
