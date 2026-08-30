@@ -151,17 +151,26 @@ http://localhost:5000
 
 ```
 .
+├── archive/                # Archived legacy and raw multi-part datasets
+│   ├── Dataset/            # Raw multi-part NASA IGBT/MOSFET measurements
+│   └── final_data/         # Legacy final_data folder (dataset + drafts)
 ├── backend/
 │   ├── app.py              # HTTP server and REST API routing
 │   ├── pipeline.py         # Master screening pipeline and verdict engine
 │   ├── model_engine.py     # Time-series GBR and degradation forecasting
 │   ├── scaler.py           # Feature normalization engine
 │   └── data/               # Persistent SQLite screening audit database
+├── data/                   # Active chronological time-series & microampere datasets
+│   ├── Breakdown_timeseries_microampere.csv
+│   ├── LeakageIV_timeseries_microampere.csv
+│   ├── TurnOn_timeseries_microampere.csv
+│   ├── Breakdown.csv
+│   ├── LeakageIV.csv
+│   └── TurnOn.csv
 ├── frontend/
 │   ├── index.html          # Split-screen UI, dashboard, and About Us view
 │   ├── styles.css          # Modern CSS styling and responsive layout rules
 │   └── app.js              # State management, Chart.js renderers, and API bridge
-├── final_data/             # Standardized chronological time-series datasets
 ├── models/                 # Physics models, notebooks, and chatbot fallback
 ├── api.md                  # Comprehensive REST API reference
 ├── README.md               # Project overview and architecture

@@ -17,7 +17,8 @@ from typing import Dict, Any, List, Optional
 from .scaler import MinMaxScaler, MINMAX_BOUNDS
 
 ROOT_DIR = Path(__file__).resolve().parent.parent
-DATASET_DIR = ROOT_DIR / "final_data" / "dataset"
+DATASET_DIR = ROOT_DIR / "data"
+ARCHIVE_DIR = ROOT_DIR / "archive" / "final_data" / "dataset"
 
 MODEL_FILE_MAP = {
     "breakdown": ("Breakdown_timeseries_microampere.csv", "Collector_Emitter_Voltage_Vce", "Leakage_Current_Ic_microampere"),
@@ -82,6 +83,8 @@ class ModelEngine:
 
         csv_name, x_col, y_col = MODEL_FILE_MAP.get(key, MODEL_FILE_MAP["breakdown"])
         csv_path = DATASET_DIR / csv_name
+        if not csv_path.exists():
+            csv_path = ARCHIVE_DIR / csv_name
         if not csv_path.exists():
             csv_path = ROOT_DIR / csv_name
 

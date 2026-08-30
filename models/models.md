@@ -31,12 +31,12 @@ This directory contains the machine learning regression models, physical charact
 
 The regression models are trained on electrical characterization and accelerated thermal aging datasets from NASA Prognostics Center of Excellence for discrete IGBTs (IRG4BC30K) and MOSFETs (IRF520Npbf).
 
-| Model | Notebook | Dataset | Input Feature ($X$) | Target Output ($Y$) | Nominal Range |
+| Model | Notebook | Dataset Path | Input Feature ($X$) | Target Output ($Y$) | Nominal Range |
 | :--- | :--- | :--- | :--- | :--- | :--- |
-| **Time-Series Degradation** | [`ts_fixed_timeseries.ipynb`](file:///Users/samarth/Documents/SIH%2026/models/ts_fixed_timeseries.ipynb) | `Breakdown_timeseries_microampere(1).csv` | Lags $[1..12]$, Rolling Mean/Std $[3..24]$ | Future Leakage Current ($I_c$) [$\mu\text{A}$] | $0 - 650\text{ V} \rightarrow 0 - 250\ \mu\text{A}$ |
-| **Breakdown** | [`breakdown.ipynb`](file:///Users/samarth/Documents/SIH%2026/models/breakdown.ipynb) | `Breakdown.csv` | Collector-Emitter Voltage ($V_{ce}$) [V] | Leakage Current ($I_c$) [A] | $0 - 650\text{ V} \rightarrow 1\text{ nA} - 100\ \mu\text{A}$ |
-| **Leakage IV** | [`leakage.ipynb`](file:///Users/samarth/Documents/SIH%2026/models/leakage.ipynb) | `LeakageIV.csv` | Applied Bias Voltage ($V$) [V] | Leakage Current ($I_{\text{leak}}$) [A] | $0 - 50\text{ V} \rightarrow 1\text{ nA} - 50\ \mu\text{A}$ |
-| **Turn-On** | [`turnOn.ipynb`](file:///Users/samarth/Documents/SIH%2026/models/turnOn.ipynb) | `TurnOn.csv` | Gate-Emitter Voltage ($V_{ge}$) [V] | Collector Current ($I_c$) [A] | $0 - 15\text{ V} \rightarrow 0 - 30\text{ A}$ |
+| **Time-Series Degradation** | [`ts_fixed_timeseries.ipynb`](file:///Users/samarth/Documents/SIH%2026/models/ts_fixed_timeseries.ipynb) | `data/Breakdown_timeseries_microampere.csv` | Lags $[1..12]$, Rolling Mean/Std $[3..24]$ | Future Leakage Current ($I_c$) [$\mu\text{A}$] | $0 - 650\text{ V} \rightarrow 0 - 250\ \mu\text{A}$ |
+| **Breakdown** | [`breakdown.ipynb`](file:///Users/samarth/Documents/SIH%2026/models/breakdown.ipynb) | `data/Breakdown.csv` | Collector-Emitter Voltage ($V_{ce}$) [V] | Leakage Current ($I_c$) [A] | $0 - 650\text{ V} \rightarrow 1\text{ nA} - 100\ \mu\text{A}$ |
+| **Leakage IV** | [`leakage.ipynb`](file:///Users/samarth/Documents/SIH%2026/models/leakage.ipynb) | `data/LeakageIV.csv` | Applied Bias Voltage ($V$) [V] | Leakage Current ($I_{\text{leak}}$) [A] | $0 - 50\text{ V} \rightarrow 1\text{ nA} - 50\ \mu\text{A}$ |
+| **Turn-On** | [`turnOn.ipynb`](file:///Users/samarth/Documents/SIH%2026/models/turnOn.ipynb) | `data/TurnOn.csv` | Gate-Emitter Voltage ($V_{ge}$) [V] | Collector Current ($I_c$) [A] | $0 - 15\text{ V} \rightarrow 0 - 30\text{ A}$ |
 
 ---
 

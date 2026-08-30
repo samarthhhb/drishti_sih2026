@@ -16,7 +16,7 @@ It handles the complete flow:
 
 ```mermaid
 flowchart TD
-    SensorStream["Sequential Sensor Stream\n(Breakdown_timeseries_microampere.csv • 3790 rows • Δt=30min)"] --> App["Backend REST API\n(backend/app.py)"]
+    SensorStream["Sequential Sensor Stream\n(data/Breakdown_timeseries_microampere.csv • 3790 rows • Δt=30min)"] --> App["Backend REST API\n(backend/app.py)"]
     UserInput["User Test Input\n(Vce, Observed Ic in microAmpere)"] --> App
 
     subgraph TimeSeriesModule ["Time-Series Feature & Scaler Engine"]

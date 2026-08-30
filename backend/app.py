@@ -42,7 +42,8 @@ except (ImportError, ModuleNotFoundError):
 pipeline_instance = ScreeningPipeline()
 
 FRONTEND_DIR = ROOT_DIR / "frontend"
-DATASET_DIR = ROOT_DIR / "final_data" / "dataset"
+DATASET_DIR = ROOT_DIR / "data"
+ARCHIVE_DIR = ROOT_DIR / "archive" / "final_data" / "dataset"
 
 
 def sample_dataset(model_type: str, max_points: int = 150):
@@ -61,8 +62,10 @@ def sample_dataset(model_type: str, max_points: int = 150):
         return []
 
     if not csv_file.exists():
-        # Fallback to drafts if dataset not in final_data/dataset
-        csv_file = ROOT_DIR / "final_data" / "drafts" / f"{csv_file.name}"
+        csv_file = ARCHIVE_DIR / csv_file.name
+    if not csv_file.exists():
+        # Fallback to drafts if dataset not in archive/final_data/dataset
+        csv_file = ROOT_DIR / "archive" / "final_data" / "drafts" / f"{csv_file.name}"
 
     points = []
     if csv_file.exists():

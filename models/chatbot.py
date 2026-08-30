@@ -699,9 +699,9 @@ Keep it strictly under 100 words.
         if "breakdown" in q:
             return (
                 "###  Breakdown Model Dynamics (IRG4BC30K IGBT)\n"
-                "- **Dataset**: NASA Accelerated Aging Dataset (`final_data/dataset/Breakdown.csv`).\n"
+                "- **Dataset**: NASA Accelerated Aging Dataset (`data/Breakdown.csv` & `data/Breakdown_timeseries_microampere.csv`).\n"
                 "- **Input**: Collector-Emitter Voltage ($V_{ce}$, Volts).\n"
-                "- **Output**: Collector Leakage Current ($I_c$, Amperes).\n"
+                "- **Output**: Collector Leakage Current ($I_c$, Amperes / $\\mu\\text{A}$).\n"
                 "- **Physics**: At low $V_{ce}$, thermal generation causes minor nA leakage. At high electric fields near $V_{BR}$ (~600V), "
                 "avalanche impact ionization multiplies carriers exponentially.\n"
                 "- **Discrepancy Meaning**: If user output is higher than model prediction at sub-breakdown voltages, the device suffers from guard ring degradation or hot-carrier stress."
@@ -709,18 +709,18 @@ Keep it strictly under 100 words.
         elif "leakage" in q:
             return (
                 "###  Leakage Current IV Model Dynamics\n"
-                "- **Dataset**: `final_data/dataset/LeakageIV.csv`.\n"
+                "- **Dataset**: `data/LeakageIV.csv` & `data/LeakageIV_timeseries_microampere.csv`.\n"
                 "- **Input**: Applied Voltage ($V$, Volts).\n"
-                "- **Output**: Leakage Current ($I_{leak}$, Amperes).\n"
+                "- **Output**: Leakage Current ($I_{leak}$, Amperes / $\\mu\\text{A}$).\n"
                 r"- **Physics**: Governed by Shockley-Read-Hall (SRH) generation-recombination and field emission ($I_{leak} \propto T^2 e^{-E_g/2kT}$)." "\n"
                 "- **Screening Significance**: Components passing static datasheet limits (<50μA) but showing abnormal population deviation (e.g. 45μA vs lot average 10μA) are flagged for latent defect risk."
             )
         elif "turn" in q or "on" in q or "vge" in q or "vth" in q:
             return (
                 "###  Turn-On Characteristics Model Dynamics\n"
-                "- **Dataset**: `final_data/dataset/TurnOn.csv`.\n"
+                "- **Dataset**: `data/TurnOn.csv` & `data/TurnOn_timeseries_microampere.csv`.\n"
                 "- **Input**: Gate Voltage ($V_{ge}$, Volts).\n"
-                "- **Output**: Collector Current ($I_c$, Amperes).\n"
+                "- **Output**: Collector Current ($I_c$, Amperes / $\\mu\\text{A}$).\n"
                 r"- **Physics**: Above threshold voltage $V_{th}$ (~4.0V), inversion channel forms. Gate oxide charge trapping shifts $V_{th}$, while interface states degrade transconductance ($g_m$)." "\n"
                 "- **Discrepancy Meaning**: If user current is lower than model, positive $V_{th}$ drift is present, causing higher switching losses."
             )

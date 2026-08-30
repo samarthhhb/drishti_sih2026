@@ -1,0 +1,233 @@
+{
+  "project": {
+    "id": "SIH26170",
+    "name": "Dhrishti",
+    "module": "Dynamic Curve-Level Anomaly Detection",
+    "version": "1.0"
+  },
+  "core_principle": {
+    "inference_unit": "complete_curve",
+    "single_point_inference_supported": false,
+    "training_retrained_during_api_request": false
+  },
+  "model_types": {
+    "breakdown": {
+      "display_name": "Breakdown Model",
+      "x_column": "Collector_Emitter_Voltage_Vce",
+      "y_column": "Leakage_Current_Ic",
+      "x_label": "Collector-Emitter Voltage (V)",
+      "y_label": "Leakage Current (A)",
+      "artifacts": {
+        "scaler": "models/breakdown_scaler.joblib",
+        "isolation_forest": "models/breakdown_isolation_forest.joblib",
+        "config": "models/breakdown_config.joblib"
+      }
+    },
+    "leakage": {
+      "display_name": "Leakage IV Model",
+      "x_column": "Applied_Voltage",
+      "y_column": "Leakage_Current",
+      "x_label": "Applied Voltage (V)",
+      "y_label": "Leakage Current (A)",
+      "artifacts": {
+        "scaler": "models/leakage_scaler.joblib",
+        "isolation_forest": "models/leakage_isolation_forest.joblib",
+        "config": "models/leakage_config.joblib"
+      }
+    },
+    "turnon": {
+      "display_name": "Turn-On Model",
+      "x_column": "Gate_Voltage",
+      "y_column": "Collector_Current",
+      "x_label": "Gate Voltage (V)",
+      "y_label": "Collector Current (A)",
+      "artifacts": {
+        "scaler": "models/turnon_scaler.joblib",
+        "isolation_forest": "models/turnon_isolation_forest.joblib",
+        "config": "models/turnon_config.joblib"
+      }
+    }
+  },
+  "features": {
+    "count": 17,
+    "identifier_column": "curve_id",
+    "model_input_order": [
+      "min_voltage",
+      "max_voltage",
+      "min_current",
+      "max_current",
+      "mean_current",
+      "std_current",
+      "max_slope",
+      "mean_slope",
+      "knee_voltage",
+      "current_v25",
+      "current_v50",
+      "current_v75",
+      "current_v90",
+      "voltage_10pct",
+      "voltage_50pct",
+      "voltage_90pct",
+      "curve_area"
+    ]
+  },
+  "api": {
+    "endpoint": "/api/anomaly/detect",
+    "method": "POST",
+    "request": {
+      "content_type": "application/json",
+      "required": [
+        "model_type",
+        "curve.x",
+        "curve.y"
+      ],
+      "optional": [
+        "component_id",
+        "include_curve_data"
+      ],
+      "schema": {
+        "model_type": "breakdown | leakage | turnon",
+        "component_id": "string",
+        "curve": {
+          "x": "array<number>",
+          "y": "array<number>"
+        },
+        "include_curve_data": "boolean"
+      }
+    },
+    "response": {
+      "success": "boolean",
+      "model_type": "string",
+      "component_id": "string|null",
+      "anomaly": {
+        "dynamic_score": "number",
+        "outlier_feature_count": "integer",
+        "outlier_features": "array<object>",
+        "isolation_score": "number",
+        "ml_flag": "NORMAL | ANOMALY",
+        "combined_score": "number",
+        "decision": "PASS | HOLD | REJECT",
+        "severity": "LOW | MODERATE | HIGH"
+      },
+      "features": "object",
+      "chatbot_context": "object"
+    }
+  },
+  "validation": {
+    "x_y_equal_length": true,
+    "numeric_values_only": true,
+    "empty_curve_rejected": true,
+    "insufficient_points_rejected": true,
+    "unknown_model_type_rejected": true,
+    "curve_id_excluded_from_model_input": true,
+    "feature_order_must_match_training": true
+  },
+  "dynamic_outlier_detection": {
+    "purpose": "population_relative_outlier_detection",
+    "outputs": [
+      "dynamic_score",
+      "outlier_feature_count",
+      "outlier_features"
+    ],
+    "score_is_probability": false,
+    "thresholds_must_be_configurable": true
+  },
+  "isolation_forest": {
+    "fit_during_inference": false,
+    "load_with": "joblib",
+    "outputs": [
+      "isolation_score",
+      "ml_flag"
+    ],
+    "score_is_probability": false
+  },
+  "combined_score": {
+    "raw_scores_must_be_normalized_before_fusion": true,
+    "initial_weights": {
+      "dynamic": 0.6,
+      "isolation_forest": 0.4
+    },
+    "weights_must_be_configurable": true,
+    "thresholds_are_provisional": true,
+    "initial_decision_ranges": {
+      "pass": "< 0.40",
+      "hold": "0.40 to < 0.70",
+      "reject": ">= 0.70"
+    }
+  },
+  "decision_policy": {
+    "allowed_decisions": [
+      "PASS",
+      "HOLD",
+      "REJECT"
+    ],
+    "principle": "combine dynamic evidence and Isolation Forest evidence",
+    "thresholds_must_be_tuned_before_final_deployment": true
+  },
+  "frontend": {
+    "result_components": [
+      "status",
+      "decision",
+      "severity",
+      "combined_score",
+      "dynamic_score",
+      "isolation_score",
+      "top_unusual_features",
+      "curve_visualization",
+      "population_context",
+      "chatbot_explanation"
+    ],
+    "charts": [
+      "test_curve",
+      "population_context",
+      "feature_anomaly_scores"
+    ]
+  },
+  "chatbot": {
+    "receives_structured_context": true,
+    "receives_raw_dataframe": false,
+    "context_fields": [
+      "decision",
+      "severity",
+      "dynamic_score",
+      "isolation_score",
+      "combined_score",
+      "ml_flag",
+      "outlier_features"
+    ]
+  },
+  "development_order": [
+    "backend feature extraction endpoint",
+    "load Breakdown artifacts",
+    "validate 17 features against notebook",
+    "validate dynamic score",
+    "validate Isolation Forest",
+    "add normalized combined score",
+    "add PASS/HOLD/REJECT",
+    "add frontend anomaly card",
+    "add anomaly visualizations",
+    "integrate chatbot context",
+    "repeat for Leakage IV",
+    "repeat for Turn-On",
+    "end-to-end test all three models"
+  ],
+  "validation_checklist": [
+    "same feature extraction logic as training notebook",
+    "curve_id excluded from model input",
+    "exact 17-feature order preserved",
+    "correct scaler/model pair per model type",
+    "no model fitting during inference",
+    "dynamic configuration loaded",
+    "configurable dynamic thresholds",
+    "configurable Isolation Forest settings",
+    "scores normalized before fusion",
+    "configurable fusion weights",
+    "configurable decision thresholds",
+    "API validation",
+    "frontend result rendering",
+    "chatbot structured context",
+    "Breakdown tested",
+    "Leakage IV tested",
+    "Turn-On tested"
+  ]
+}
