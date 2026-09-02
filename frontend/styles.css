@@ -726,11 +726,15 @@ body {
 
 /* RESULTS & VERDICT */
 .verdict-pill {
-    padding: 3px 10px;
+    padding: 4px 12px;
     border-radius: 12px;
-    font-size: 0.75rem;
+    font-size: 0.78rem;
     font-weight: 800;
     letter-spacing: 0.04em;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .badge-pass   { background: var(--green-light); border: 1px solid var(--green-border); color: var(--india-green); }

@@ -211,46 +211,55 @@ class DiscrepancyAnalyzer:
         causes = []
         recs = []
 
-        if abs_pct <= 10.0:
+        if abs_pct <= 15.0:
             decision = "PASS"
             severity = "LOW"
-            causes.append("Normal manufacturing process variation and measurement sensor noise within ±10% tolerance.")
+            causes.append("Normal manufacturing process variation and measurement sensor noise within ±15% tolerance.")
             causes.append("Device operates well within healthy statistical population baseline.")
             recs.append("Proceed with normal screening workflow.")
             recs.append("Log telemetry for longitudinal lot tracking.")
             return decision, severity, causes, recs
 
         if category == "breakdown":
-            # Breakdown: X is Vce, Y is Leakage Ic
-            if delta > 0:  # User observed higher leakage than model predicted at voltage X
-                if x >= 500.0 or abs_pct > 100.0 or y_user > 1e-5:
+            # Breakdown: X is Vce (0..650V), Y is Leakage Ic (0..150 uA)
+            if delta > 0:  # User observed higher leakage than model predicted
+                if y_user > 40.0 or (x >= 500.0 and abs_pct > 40.0) or abs_pct > 100.0 or (x >= 550.0 and y_user > 20.0):
                     decision = "REJECT"
-                    severity = "CRITICAL" if abs_pct > 300.0 else "HIGH"
+                    severity = "CRITICAL" if abs_pct > 200.0 or y_user > 60.0 else "HIGH"
                     causes.append("Premature Avalanche Breakdown: Guard ring oxide degradation or field plate micro-defects triggering localized impact ionization below nominal V_BR.")
                     causes.append("High Surface Leakage: Passivation layer cracking or ionic contamination along the collector-emitter edge termination.")
                     causes.append("Thermal Runaway Warning: Intrinsic carrier concentration n_i multiplied by localized hot-spot Joule heating.")
                     recs.append("REJECT component from flight/high-reliability batch (high latent failure risk).")
                     recs.append("Perform full IV curve sweep from 0V to rated V_BR to identify exact breakdown knee shift.")
                     recs.append("Conduct emission microscopy (EMMI) or thermal IR imaging to locate hot-spot localization.")
-                else:
+                elif abs_pct > 15.0 or y_user > 5.0:
                     decision = "HOLD"
                     severity = "MODERATE"
                     causes.append("Early onset of pre-breakdown leakage drift due to thermal stress or crystal lattice point defects.")
                     causes.append("Possible temperature divergence: Tested component junction temp may be higher than baseline calibration (25°C).")
                     recs.append("HOLD for secondary stress screening (burn-in re-test at 125°C).")
                     recs.append("Verify ambient and case temperature calibration.")
-            else:  # delta < 0 (user observed lower leakage than model)
-                decision = "HOLD" if abs_pct > 50.0 else "PASS"
-                severity = "LOW" if abs_pct <= 50.0 else "MODERATE"
-                causes.append("Model over-estimation at sub-breakdown voltage or superior die quality with lower defect density.")
-                causes.append("Measurement instrument range / compliance limit saturation.")
-                recs.append("Verify instrument sensitivity threshold (femto-ammeter vs standard SMU).")
-                recs.append("Refine regression model calibration in the low-field sub-threshold region.")
+                else:
+                    decision = "PASS"
+                    severity = "LOW"
+                    causes.append("Acceptable pre-breakdown leakage within statistical flight screening tolerance.")
+                    recs.append("Proceed to functional lot screening.")
+            else:  # delta <= 0 (user observed lower leakage than model)
+                if abs_pct > 80.0 and x >= 500.0:
+                    decision = "HOLD"
+                    severity = "MODERATE"
+                    causes.append("Model over-estimation at high voltage or instrument compliance saturation / probe contact resistance.")
+                    recs.append("Verify instrument compliance setting and probe contact integrity.")
+                else:
+                    decision = "PASS"
+                    severity = "LOW"
+                    causes.append("Superior die quality with lower defect density and ultra-low leakage current.")
+                    recs.append("Component accepted under pristine baseline envelope.")
 
         elif category == "leakage":
-            # Leakage: X is Applied Voltage, Y is Leakage Current
+            # Leakage: X is Applied Voltage (0..600V), Y is Leakage Current (0..10 uA)
             if delta > 0:
-                if y_user >= 4e-5 or abs_pct > 200.0 or ratio > 3.0:
+                if y_user >= 6.0 or (x >= 400.0 and y_user >= 4.0) or abs_pct > 60.0 or ratio > 2.5:
                     decision = "REJECT"
                     severity = "HIGH"
                     causes.append("Latent Die Degradation: Increased Shockley-Read-Hall (SRH) generation centers due to metallic impurities or crystal dislocation loops.")
@@ -258,7 +267,7 @@ class DiscrepancyAnalyzer:
                     causes.append("Package Solder Delamination: Thermal resistance (Rth_jc) increase leading to higher junction temperature and exponential leakage surge.")
                     recs.append("REJECT from active flight assembly; route to destructive physical analysis (DPA).")
                     recs.append("Apply high-temperature reverse bias (HTRB) stress screening to evaluate drift trajectory.")
-                elif abs_pct > 25.0:
+                elif abs_pct > 15.0 or y_user > 2.0:
                     decision = "HOLD"
                     severity = "MODERATE"
                     causes.append("Elevated leakage relative to healthy lot population, indicating early thermal aging or surface state traps.")
@@ -271,15 +280,30 @@ class DiscrepancyAnalyzer:
                     causes.append("Mild drift within acceptable environmental stress screening band.")
                     recs.append("Monitor for future drift acceleration.")
             else:
-                decision = "PASS"
-                severity = "LOW"
-                causes.append("Leakage is lower than predicted, indicating ultra-low defect density or cooler operating die.")
-                recs.append("No immediate reliability risk detected.")
+                if abs_pct > 90.0 and x >= 300.0:
+                    decision = "HOLD"
+                    severity = "LOW"
+                    causes.append("Zero/near-zero current at elevated voltage; verify SMU connection and ammeter sensitivity range.")
+                    recs.append("Check sensor continuity.")
+                else:
+                    decision = "PASS"
+                    severity = "LOW"
+                    causes.append("Leakage is lower than predicted, indicating ultra-low defect density or cooler operating die.")
+                    recs.append("No immediate reliability risk detected.")
 
         elif category == "turnon":
-            # TurnOn: X is Vge (Gate Voltage), Y is Collector Current Ic
+            # TurnOn: X is Vge (0..15V), Y is Collector Current Ic (0..250 uA)
+            if x < 4.0 and y_user <= 0.5:
+                # Nominal sub-threshold cut-off state
+                decision = "PASS"
+                severity = "LOW"
+                causes.append("Normal sub-threshold cut-off state below threshold voltage (V_th ≈ 4.0V).")
+                causes.append("Zero/near-zero leakage current indicates intact gate dielectric.")
+                recs.append("Proceed with standard active conduction screening.")
+                return decision, severity, causes, recs
+
             if delta < 0:  # User observed LESS current than model predicted for given Vge
-                if abs_pct > 50.0 or (x >= 6.0 and y_user < 0.1):
+                if (x >= 6.0 and y_user < 15.0) or abs_pct > 50.0:
                     decision = "REJECT"
                     severity = "HIGH"
                     causes.append("Positive Threshold Voltage Shift (ΔVth > 0): Negative charge / electron trapping in the gate SiO2 dielectric.")
@@ -287,32 +311,42 @@ class DiscrepancyAnalyzer:
                     causes.append("Bond Wire Lift-off / High On-State Resistance: Partial emitter bond wire detachment increasing series parasitic resistance.")
                     recs.append("REJECT component due to increased conduction losses and risk of thermal destruction.")
                     recs.append("Perform Vth measurement at constant Ic = 1mA and measure R_on / Vce(sat).")
-                else:
+                elif abs_pct > 20.0:
                     decision = "HOLD"
                     severity = "MODERATE"
                     causes.append("Moderate Vth drift or slight transconductance drop due to gate electrical overstress or aging.")
                     recs.append("HOLD for gate-stress test (HTGB - High Temperature Gate Bias).")
                     recs.append("Track gate leakage (Iges) to ensure dielectric integrity.")
+                else:
+                    decision = "PASS"
+                    severity = "LOW"
+                    causes.append("Normal active conduction within acceptable tolerance.")
+                    recs.append("Proceed to next burn-in phase.")
             else:  # User observed MORE current than model predicted
-                if x < 4.0 and y_user > 1.0:
+                if x < 4.0 and y_user > 5.0:
                     decision = "REJECT"
                     severity = "CRITICAL"
                     causes.append("Negative Threshold Voltage Shift / Parasitic Inversion: Device turns on prematurely at sub-threshold gate bias.")
                     causes.append("Risk of uncommanded turn-on, shoot-through in half-bridge configurations, or parasitic thyristor latch-up.")
                     recs.append("IMMEDIATE REJECT. Do not use in power conversion stages.")
+                elif abs_pct > 40.0:
+                    decision = "HOLD"
+                    severity = "MODERATE"
+                    causes.append("Moderate transconductance elevation or slight forward transfer curve shift.")
+                    recs.append("Verify gate driver voltage calibration and quarantine for drift test.")
                 else:
-                    decision = "PASS" if abs_pct < 30.0 else "HOLD"
-                    severity = "LOW" if abs_pct < 30.0 else "MODERATE"
-                    causes.append("High channel mobility or model saturation under-fitting at high gate drive.")
-                    recs.append("Verify gate drive voltage calibration.")
+                    decision = "PASS"
+                    severity = "LOW"
+                    causes.append("High channel mobility or model saturation within nominal bounds.")
+                    recs.append("Accept component.")
 
         else:  # Custom model
-            if abs_pct > 100.0:
+            if abs_pct > 50.0:
                 decision = "REJECT"
                 severity = "HIGH"
-                causes.append("Major deviation from ML model prediction (>100% error).")
+                causes.append("Major deviation from ML model prediction (>50% error).")
                 recs.append("Flag for manual engineering review and recalibrate regression model.")
-            elif abs_pct > 25.0:
+            elif abs_pct > 20.0:
                 decision = "HOLD"
                 severity = "MODERATE"
                 causes.append("Moderate statistical divergence from expected response.")

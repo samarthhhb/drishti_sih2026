@@ -201,7 +201,12 @@ class ModelEngine:
         else:
             y_norm = 0.95 * x_norm
 
-        y_norm = max(0.0, min(1.0, y_norm))
+        # Time-series aging degradation factor (0 to 113,700 min)
+        t_val = time_minutes if time_minutes is not None else 90960.0
+        t_norm = min(1.0, max(0.0, t_val / 113700.0))
+        aging_factor = 1.0 + (0.22 * (t_norm ** 1.3))
+
+        y_norm = max(0.0, min(1.0, y_norm * aging_factor))
         physical_y_microampere = self.scaler.inverse_transform_y(key, y_norm)
 
         return {

@@ -140,7 +140,7 @@
                                 <div class="field">
                                     <label for="inputRawX" id="labelRawX">Input Voltage (V)</label>
                                     <input type="number" step="any" id="inputRawX" class="input-text" value="550.0"
-                                        required onchange="onInputChangeX(this.value)">
+                                        required oninput="onInputChangeX(this.value)" onchange="onInputChangeX(this.value)">
                                 </div>
 
                                 <!-- Voltage Slider -->
@@ -184,7 +184,7 @@
                                         <span class="val-badge val-badge-orange" id="sliderValY">12.50 uA</span>
                                     </div>
                                     <input type="number" step="any" id="inputUserY" class="input-text" value="12.5"
-                                        onchange="onInputChangeY(this.value)" style="margin-bottom: 6px;">
+                                        oninput="onInputChangeY(this.value)" onchange="onInputChangeY(this.value)" style="margin-bottom: 6px;">
                                     <input type="range" id="sliderY" class="range-slider slider-orange" min="0"
                                         max="150" step="0.1" value="12.5" oninput="onSliderChangeY(this.value)">
                                 </div>
@@ -399,7 +399,7 @@
                                 <!-- Custom coordinates drawer (hidden by default unless custom is selected) -->
                                 <div id="customCurveArea" class="field" style="display: none; margin-top: 8px;">
                                     <label for="customCoordsInput">Custom Sweep Coordinates (JSON or CSV)</label>
-                                    <textarea id="customCoordsInput" class="input-text" rows="3" placeholder='{"x": [2.0, 3.5, 5.1], "y": [0.005, 0.08, 14.5]}'></textarea>
+                                    <textarea id="customCoordsInput" class="input-text" rows="3" placeholder='{"x": [2.0, 3.5, 5.1], "y": [0.005, 0.08, 14.5]}' oninput="onCustomCoordsInput()"></textarea>
                                 </div>
 
                                 <button type="submit" class="btn-submit" id="btnRunOutlier" style="margin-top: 10px;">

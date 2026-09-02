@@ -26,7 +26,7 @@ const MODEL_CONFIGS = {
         presets: [
             { name: "Aged Degradation (550V)", x: 550.0, t: 90960.0, userY: 12.5, cid: "NASA-Part-12 (Aged)" },
             { name: "Pristine Baseline (300V)", x: 300.0, t: 30000.0, userY: 0.05, cid: "NASA-Part-11 (Pristine)" },
-            { name: "Avalanche Runaway (580V)", x: 580.0, t: 105000.0, userY: 85.0, cid: "NASA-Part-16 (Runaway)" }
+            { name: "Avalanche Runaway (580V)", x: 580.0, t: 105000.0, userY: 135.0, cid: "NASA-Part-16 (Runaway)" }
         ]
     },
     leakage: {
@@ -37,16 +37,16 @@ const MODEL_CONFIGS = {
         yLabel: "Leakage Current (microAmpere)",
         defaultX: 300.0,
         defaultTime: 90960.0,
-        defaultUserY: 4.5,
+        defaultUserY: 5.5,
         defaultCompId: "NASA-IGBT-Part-18",
         xMin: 0,
         xMax: 600,
         yMin: 0,
         yMax: 10.0,
         presets: [
-            { name: "Latent SRH Defect (300V)", x: 300.0, t: 90960.0, userY: 4.5, cid: "NASA-Part-18 (Latent)" },
+            { name: "Latent SRH Defect (300V)", x: 300.0, t: 90960.0, userY: 7.8, cid: "NASA-Part-18 (Latent)" },
             { name: "Healthy Dielectric (100V)", x: 100.0, t: 30000.0, userY: 0.05, cid: "NASA-Part-11 (Healthy)" },
-            { name: "Thermal Bias Drift (500V)", x: 500.0, t: 105000.0, userY: 8.5, cid: "NASA-Part-15 (Thermal)" }
+            { name: "Thermal Bias Drift (500V)", x: 500.0, t: 105000.0, userY: 5.5, cid: "NASA-Part-15 (Thermal)" }
         ]
     },
     turnon: {
@@ -57,7 +57,7 @@ const MODEL_CONFIGS = {
         yLabel: "Collector Current (microAmpere)",
         defaultX: 8.0,
         defaultTime: 90960.0,
-        defaultUserY: 25.0,
+        defaultUserY: 38.0,
         defaultCompId: "NASA-IGBT-Part-14",
         xMin: 0,
         xMax: 15,
@@ -65,7 +65,7 @@ const MODEL_CONFIGS = {
         yMax: 250.0,
         presets: [
             { name: "Oxide Trap Trapping (5V)", x: 5.0, t: 90960.0, userY: 25.0, cid: "NASA-Part-14 (Oxide Trap)" },
-            { name: "Normal Active Conduction (8V)", x: 8.0, t: 30000.0, userY: 150.0, cid: "NASA-Part-11 (Normal)" },
+            { name: "Normal Active Conduction (8V)", x: 8.0, t: 30000.0, userY: 42.0, cid: "NASA-Part-11 (Normal)" },
             { name: "Degraded Transconductance (10V)", x: 10.0, t: 105000.0, userY: 10.0, cid: "NASA-Part-19 (Degraded gm)" }
         ]
     }
@@ -1217,20 +1217,36 @@ async function runModelPipeline() {
         resPanel.style.display = "block";
 
         const badge = document.getElementById("riskDecisionBadge");
-        const decision = data.discrepancy.risk_decision;
-        badge.textContent = decision;
-        badge.className = "verdict-pill " + (decision === "PASS" ? "badge-pass" : (decision === "HOLD" ? "badge-hold" : "badge-reject"));
+        if (badge) {
+            const decision = data.discrepancy.risk_decision;
+            badge.textContent = decision;
+            badge.className = "verdict-pill " + (decision === "PASS" ? "badge-pass" : (decision === "HOLD" ? "badge-hold" : "badge-reject"));
+        }
 
-        document.getElementById("statRawX").textContent = `${data.raw_input.toFixed(1)} V`;
-        document.getElementById("statTime").textContent = `${timeVal.toLocaleString()} min`;
-        document.getElementById("statModelY").textContent = `${data.physical_output.toFixed(2)} uA`;
-        document.getElementById("statUserY").textContent = data.user_said_output !== null ? `${data.user_said_output.toFixed(2)} uA` : "N/A";
+        const elModelY = document.getElementById("statModelY");
+        if (elModelY) elModelY.textContent = `${data.physical_output.toFixed(2)} uA`;
+
+        const elUserY = document.getElementById("statUserY");
+        if (elUserY) elUserY.textContent = data.user_said_output !== null ? `${data.user_said_output.toFixed(2)} uA` : "N/A";
         
         const resVal = data.user_said_output !== null ? (data.user_said_output - data.physical_output) : 0.0;
-        document.getElementById("statResidual").textContent = `${resVal > 0 ? "+" : ""}${resVal.toFixed(2)} uA`;
-        document.getElementById("statPctDiff").textContent = data.discrepancy.pct_diff !== null ? `${data.discrepancy.pct_diff > 0 ? "+" : ""}${data.discrepancy.pct_diff.toFixed(1)}%` : "0.0%";
-        document.getElementById("statR2Score").textContent = "R²: 0.989 / MAE: 1.87 uA";
-        document.getElementById("statScaledX").textContent = data.scaled_input !== undefined ? `${data.scaled_input.toFixed(4)}` : "—";
+        const elRes = document.getElementById("statResidual");
+        if (elRes) elRes.textContent = `${resVal > 0 ? "+" : ""}${resVal.toFixed(2)} uA`;
+
+        const elPct = document.getElementById("statPctDiff");
+        if (elPct) elPct.textContent = data.discrepancy.pct_diff !== null ? `${data.discrepancy.pct_diff > 0 ? "+" : ""}${data.discrepancy.pct_diff.toFixed(1)}%` : "0.0%";
+
+        const elRawX = document.getElementById("statRawX");
+        if (elRawX) elRawX.textContent = `${data.raw_input.toFixed(1)} V`;
+
+        const elTime = document.getElementById("statTime");
+        if (elTime) elTime.textContent = `${timeVal.toLocaleString()} min`;
+
+        const elR2 = document.getElementById("statR2Score");
+        if (elR2) elR2.textContent = "R²: 0.989 / MAE: 1.87 uA";
+
+        const elScaledX = document.getElementById("statScaledX");
+        if (elScaledX) elScaledX.textContent = data.scaled_input !== undefined ? `${data.scaled_input.toFixed(4)}` : "—";
 
         // Update AI Report Box
         const reportText = document.getElementById("aiReportText");
@@ -1438,6 +1454,15 @@ async function selectOutlierModel(modelType) {
     applyOutlierPreset(activeOutlierPreset || "9");
 }
 
+let outlierDebounceTimer = null;
+
+function onCustomCoordsInput() {
+    clearTimeout(outlierDebounceTimer);
+    outlierDebounceTimer = setTimeout(() => {
+        runOutlierDetection();
+    }, 250);
+}
+
 function applyOutlierPreset(presetVal) {
     activeOutlierPreset = presetVal;
 
@@ -1452,6 +1477,11 @@ function applyOutlierPreset(presetVal) {
     if (presetVal === "custom") {
         if (customArea) customArea.style.display = "block";
         if (compIdInput) compIdInput.value = "CUSTOM-DUT-01";
+        const coordsEl = document.getElementById("customCoordsInput");
+        if (coordsEl && !coordsEl.value.trim()) {
+            coordsEl.value = '{"x": [2.0, 3.5, 4.5, 5.0, 5.5], "y": [0.01, 0.05, 0.4, 3.2, 18.0]}';
+        }
+        runOutlierDetection();
         return;
     }
 
