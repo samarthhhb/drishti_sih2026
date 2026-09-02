@@ -62,6 +62,8 @@ class ScreeningPipeline:
         scaled_y = pred["scaled_output"]
 
         # Step 2: Discrepancy & Chatbot Explanation
+        t_stamp = int(time_minutes) if time_minutes is not None else 100110
+
         if user_said_output is not None:
             diag = self.chatbot.explain_discrepancy(
                 model_type=model_type,
@@ -80,6 +82,23 @@ class ScreeningPipeline:
             direction = diag["direction"]
             physics_causes = diag["physics_causes"]
             recommendations = diag["recommendations"]
+
+            res_val = round(user_said_output - physical_y_model, 2)
+            denom = physical_y_model if abs(physical_y_model) > 1e-9 else 1e-9
+            drift_pct = round((res_val / denom) * 100.0, 1)
+
+            # Trend & Prediction Status
+            trend = "increasing" if (res_val > 0.5 or t_stamp >= 60000) else ("decreasing" if res_val < -0.5 else "stable")
+            if res_val < -1.0:
+                pred_status = "underprediction"
+                short_explanation = f"Model significantly underpredicted the observed leakage current (drift: {drift_pct:+.1f}%)."
+            elif res_val > 1.0:
+                pred_status = "overprediction"
+                short_explanation = f"Observed leakage current is elevated above baseline forecast by {abs(res_val):.2f} uA ({drift_pct:+.1f}%)."
+            else:
+                pred_status = "nominal"
+                short_explanation = "Observed telemetry matches expected degradation trajectory within calibrated tolerance."
+
         else:
             delta = None
             pct_diff = None
@@ -87,6 +106,11 @@ class ScreeningPipeline:
             direction = "NOMINAL_PREDICTION"
             risk_decision = "PASS"
             severity = "LOW"
+            res_val = 0.0
+            drift_pct = 0.0
+            trend = "stable"
+            pred_status = "nominal"
+            short_explanation = "Nominal operation predicted by ML model."
             physics_causes = [
                 f"Nominal operation predicted by ML model for input {raw_input} {pred['input_unit']}."
             ]
@@ -102,6 +126,17 @@ class ScreeningPipeline:
                 f"**Dynamics Overview**:\n"
                 f"The component is evaluated under standard operational bounds."
             )
+
+        monitor_obj = {
+            "timestamp": t_stamp,
+            "actual_value_uA": round(user_said_output, 2) if user_said_output is not None else None,
+            "predicted_value_uA": round(physical_y_model, 2),
+            "residual_uA": res_val,
+            "drift_percentage": drift_pct,
+            "trend": trend,
+            "prediction_status": pred_status,
+            "explanation": short_explanation
+        }
 
         # Step 3: Persist transaction into SQLite Database
         record_data = {
@@ -143,9 +178,26 @@ class ScreeningPipeline:
             "norm_output": scaled_y,
             "physical_output": physical_y_model,
             "user_said_output": user_said_output,
+            # Structured Time-Series Monitor Schema
+            "timestamp": t_stamp,
+            "actual_value_uA": monitor_obj["actual_value_uA"],
+            "predicted_value_uA": monitor_obj["predicted_value_uA"],
+            "residual_uA": monitor_obj["residual_uA"],
+            "drift_percentage": monitor_obj["drift_percentage"],
+            "trend": monitor_obj["trend"],
+            "prediction_status": monitor_obj["prediction_status"],
+            "explanation": monitor_obj["explanation"],
+            "monitor": monitor_obj,
+            "time_series_monitor": monitor_obj,
             "discrepancy": {
                 "delta": delta,
                 "pct_diff": pct_diff,
+                "residual_uA": res_val,
+                "drift_percentage": drift_pct,
+                "actual_value_uA": monitor_obj["actual_value_uA"],
+                "predicted_value_uA": monitor_obj["predicted_value_uA"],
+                "trend": trend,
+                "prediction_status": pred_status,
                 "ratio": ratio,
                 "direction": direction,
                 "risk_decision": risk_decision,

@@ -134,23 +134,68 @@ Returns sequential chronological telemetry points for time-series degradation ch
 ```json
 {
   "record_id": 14,
-  "component_id": "NASA-IGBT-01",
+  "component_id": "NASA-IGBT-Part-12",
   "model_type": "breakdown",
   "raw_input": 550.0,
   "input_unit": "V",
-  "scaled_input": 0.846,
-  "physical_output": 0.01,
+  "scaled_input": 0.8462,
+  "physical_output": 86.69,
   "output_unit": "microAmpere",
-  "user_said_output": 12.50,
-  "discrepancy": {
-    "delta": 12.49,
-    "pct_diff": 99.92,
-    "ratio": 1250.0,
-    "direction": "HIGHER",
-    "risk_decision": "PASS",
-    "severity": "NORMAL"
+  "user_said_output": 20.67,
+  "timestamp": 100110,
+  "actual_value_uA": 20.67,
+  "predicted_value_uA": 86.69,
+  "residual_uA": -66.02,
+  "drift_percentage": -76.2,
+  "trend": "increasing",
+  "prediction_status": "underprediction",
+  "explanation": "Model significantly underpredicted the observed leakage current (drift: -76.2%).",
+  "time_series_monitor": {
+    "timestamp": 100110,
+    "actual_value_uA": 20.67,
+    "predicted_value_uA": 86.69,
+    "residual_uA": -66.02,
+    "drift_percentage": -76.2,
+    "trend": "increasing",
+    "prediction_status": "underprediction",
+    "explanation": "Model significantly underpredicted the observed leakage current."
   },
-  "chatbot_explanation": "Screening Verdict: PASS\n\n1. Deviation: Measured current matches normal operating envelope within calibrated limits.\n2. Physics Cause: Standard thermal generation with negligible dielectric degradation.\n3. Next Action: Proceed to subsequent screening stage."
+  "discrepancy": {
+    "delta": -66.02,
+    "pct_diff": -76.16,
+    "residual_uA": -66.02,
+    "drift_percentage": -76.2,
+    "risk_decision": "HOLD",
+    "severity": "MODERATE"
+  }
+}
+```
+
+---
+
+### `POST /api/monitor`
+**Time-Series Telemetry & Residual Monitoring Endpoint**. Accepts elapsed burn-in timestamp and measured values to compute dynamic residuals, drift rate, prediction status, and physical trend.
+
+**Request Body:**
+```json
+{
+  "timestamp": 100110,
+  "actual_value_uA": 20.67,
+  "predicted_value_uA": 86.69
+}
+```
+
+**Response:**
+```json
+{
+  "timestamp": 100110,
+  "actual_value_uA": 20.67,
+  "predicted_value_uA": 86.69,
+  "residual_uA": -66.02,
+  "drift_percentage": -76.2,
+  "trend": "increasing",
+  "prediction_status": "underprediction",
+  "explanation": "Model significantly underpredicted the observed leakage current."
 }
 ```
 

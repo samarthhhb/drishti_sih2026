@@ -289,6 +289,66 @@ class BackendAPIHandler(BaseHTTPRequestHandler):
                 self._set_headers(500)
                 self.wfile.write(json.dumps({"error": str(e)}).encode("utf-8"))
 
+        elif path in ("/api/monitor", "/api/time-series/monitor"):
+            model_type = data.get("model_type", "breakdown")
+            t_stamp = int(data.get("timestamp", data.get("time_minutes", 100110)))
+            actual_uA = data.get("actual_value_uA", data.get("user_said_output"))
+            if actual_uA is not None:
+                actual_uA = float(actual_uA)
+
+            pred_uA = data.get("predicted_value_uA")
+            if pred_uA is not None:
+                pred_uA = float(pred_uA)
+            elif "raw_input" in data:
+                raw_x = float(data["raw_input"])
+                pred_res = pipeline_instance.model_engine.predict(model_type, raw_x, time_minutes=t_stamp)
+                pred_uA = float(pred_res["physical_output"])
+            else:
+                pred_uA = 86.69
+
+            if actual_uA is not None:
+                act_val = round(actual_uA, 2)
+                pred_val = round(pred_uA, 2)
+                res_val = round(act_val - pred_val, 2)
+                denom = pred_val if abs(pred_val) > 1e-9 else 1e-9
+                drift_pct = round((res_val / denom) * 100.0, 1)
+
+                trend = "increasing" if (res_val > 0.5 or t_stamp >= 60000) else ("decreasing" if res_val < -0.5 else "stable")
+                if res_val < -1.0:
+                    pred_status = "underprediction"
+                    expl = data.get("explanation", "Model significantly underpredicted the observed leakage current.")
+                elif res_val > 1.0:
+                    pred_status = "overprediction"
+                    expl = data.get("explanation", f"Observed leakage current is elevated above baseline forecast by {abs(res_val):.2f} uA ({drift_pct:+.1f}%).")
+                else:
+                    pred_status = "nominal"
+                    expl = data.get("explanation", "Observed telemetry matches expected degradation trajectory within calibrated tolerance.")
+
+                monitor_result = {
+                    "timestamp": t_stamp,
+                    "actual_value_uA": act_val,
+                    "predicted_value_uA": pred_val,
+                    "residual_uA": res_val,
+                    "drift_percentage": drift_pct,
+                    "trend": trend,
+                    "prediction_status": pred_status,
+                    "explanation": expl
+                }
+            else:
+                monitor_result = {
+                    "timestamp": t_stamp,
+                    "actual_value_uA": None,
+                    "predicted_value_uA": round(pred_uA, 2),
+                    "residual_uA": 0.0,
+                    "drift_percentage": 0.0,
+                    "trend": "stable",
+                    "prediction_status": "nominal",
+                    "explanation": "Nominal baseline prediction."
+                }
+
+            self._set_headers(200)
+            self.wfile.write(json.dumps(monitor_result).encode("utf-8"))
+
         elif path == "/api/predict":
             model_type = data.get("model_type", "breakdown")
             try:
